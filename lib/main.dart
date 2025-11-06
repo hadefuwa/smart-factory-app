@@ -15,39 +15,26 @@ class MatrixApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF1976D2), // Professional blue
-          brightness: Brightness.light,
-        ),
-        useMaterial3: true,
-        cardTheme: CardThemeData(
-          elevation: 4,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-        ),
-        appBarTheme: const AppBarTheme(
-          centerTitle: true,
-          elevation: 0,
-        ),
-      ),
-      darkTheme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF1976D2),
+          seedColor: const Color(0xFF9C27B0), // Purple
           brightness: Brightness.dark,
         ),
         useMaterial3: true,
+        scaffoldBackgroundColor: const Color(0xFF0A0A0F),
         cardTheme: CardThemeData(
-          elevation: 4,
+          elevation: 8,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(20),
           ),
+          color: const Color(0xFF1A1A2E),
         ),
         appBarTheme: const AppBarTheme(
           centerTitle: true,
           elevation: 0,
+          backgroundColor: Color(0xFF0F0F1E),
+          foregroundColor: Color(0xFFE0B0FF),
         ),
       ),
-      themeMode: ThemeMode.system,
+      themeMode: ThemeMode.dark, // Force dark mode
       home: const ProductsListScreen(),
     );
   }

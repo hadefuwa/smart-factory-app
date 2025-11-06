@@ -56,14 +56,50 @@ class _ProductWebViewScreenState extends State<ProductWebViewScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final purple = Theme.of(context).colorScheme.primary;
+    
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.product.name),
-        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-        foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
+        title: ShaderMask(
+          shaderCallback: (bounds) => LinearGradient(
+            colors: [
+              purple,
+              purple.withValues(alpha: 0.7),
+              const Color(0xFFE0B0FF),
+            ],
+          ).createShader(bounds),
+          child: Hero(
+            tag: 'product-title-${widget.product.id}',
+            flightShuttleBuilder: (
+              BuildContext flightContext,
+              Animation<double> animation,
+              HeroFlightDirection flightDirection,
+              BuildContext fromHeroContext,
+              BuildContext toHeroContext,
+            ) {
+              final Hero toHero = toHeroContext.widget as Hero;
+              return RotationTransition(
+                turns: animation,
+                child: toHero.child,
+              );
+            },
+            child: Material(
+              color: Colors.transparent,
+              child: Text(
+                widget.product.name,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+        ),
+        backgroundColor: const Color(0xFF0F0F1E),
+        foregroundColor: const Color(0xFFE0B0FF),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: Icon(Icons.refresh, color: purple),
             onPressed: () {
               _controller.reload();
             },
@@ -71,9 +107,10 @@ class _ProductWebViewScreenState extends State<ProductWebViewScreen> {
           ),
         ],
       ),
-      body: Stack(
-        children: [
-          if (_errorMessage != null)
+      body: SafeArea(
+        child: Stack(
+          children: [
+            if (_errorMessage != null)
             Center(
               child: Padding(
                 padding: const EdgeInsets.all(24.0),
@@ -112,7 +149,14 @@ class _ProductWebViewScreenState extends State<ProductWebViewScreen> {
             WebViewWidget(controller: _controller),
           if (_isLoading && _errorMessage == null)
             Container(
-              color: Theme.of(context).scaffoldBackgroundColor,
+              decoration: BoxDecoration(
+                gradient: RadialGradient(
+                  colors: [
+                    Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                    Theme.of(context).scaffoldBackgroundColor,
+                  ],
+                ),
+              ),
               child: Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -121,17 +165,22 @@ class _ProductWebViewScreenState extends State<ProductWebViewScreen> {
                       valueColor: AlwaysStoppedAnimation<Color>(
                         Theme.of(context).colorScheme.primary,
                       ),
+                      strokeWidth: 3,
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 20),
                     Text(
                       'Loading ${widget.product.name}...',
-                      style: Theme.of(context).textTheme.bodyLarge,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.7),
+                        fontSize: 16,
+                      ),
                     ),
                   ],
                 ),
               ),
             ),
         ],
+        ),
       ),
     );
   }
