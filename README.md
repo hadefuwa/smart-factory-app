@@ -236,9 +236,131 @@ The reward system uses compound growth:
 - Visual indicators show which habits are completed today
 - Easy activation/deactivation of habits
 
+## 📱 Building for Android
+
+### Quick Build
+
+Use the provided build scripts:
+
+**Windows (Command Prompt/PowerShell):**
+```bash
+.\build-apk.bat
+```
+
+Or manually:
+```bash
+flutter build apk --release
+```
+
+The APK will be created at: `build\app\outputs\flutter-apk\app-release.apk`
+
+### Prerequisites for Android Build
+
+**Java 17 Required:**
+
+1. **Download Java 17:**
+   - Visit: https://adoptium.net/temurin/releases/?version=17
+   - Download Windows x64 installer (.msi)
+
+2. **Install:**
+   - Install to default location
+   - ✅ Check "Add to PATH" during installation
+
+3. **Set JAVA_HOME:**
+   - Press `Win + X` → "System"
+   - "Advanced system settings" → "Environment Variables"
+   - Add new variable: `JAVA_HOME` = `C:\Program Files\Eclipse Adoptium\jdk-17.x.x-hotspot`
+   - Restart terminal
+
+4. **Verify:**
+   ```bash
+   java -version
+   # Should show: openjdk version "17.x.x"
+   ```
+
+**Android SDK:**
+
+The project is configured with:
+- compileSdk: 36
+- targetSdk: 36
+- minSdk: 21 (Android 5.0+)
+- Android Gradle Plugin: 8.6.0
+- Kotlin: 2.1.0
+- Gradle: 8.7
+
+### Build Configuration
+
+The build scripts automatically:
+- Detect Java 17 installation
+- Configure Android SDK paths
+- Generate release APK (46MB)
+
+## 📲 Installing on Your Phone
+
+### Method 1: Transfer APK File (Recommended)
+
+1. **Build the APK** (see above)
+
+2. **Transfer to phone:**
+   - Email the APK to yourself
+   - Use Google Drive/Dropbox
+   - Transfer via USB cable
+   - Use Bluetooth
+
+3. **Install on phone:**
+   - Go to Settings → Security → Enable "Install unknown apps"
+   - Open the APK file on your phone
+   - Tap "Install"
+
+### Method 2: Direct USB Install
+
+1. **Enable USB Debugging on phone:**
+   - Settings → About phone
+   - Tap "Build number" 7 times
+   - Go to Settings → Developer options
+   - Enable "USB debugging"
+
+2. **Connect phone to computer via USB**
+
+3. **Install directly:**
+   ```bash
+   .\install-on-phone.bat
+   ```
+
+   Or manually:
+   ```bash
+   flutter run
+   ```
+
+### Method 3: Using Android Studio
+
+1. Open project in Android Studio
+2. Connect phone via USB (USB debugging enabled)
+3. Click the green "Run" button (▶️)
+4. Select your phone from device list
+
 ## 🐛 Troubleshooting
 
-### App won't run on Windows
+### Build Issues
+
+**"Java 17 not found"**
+- Install Java 17 from Adoptium (see Prerequisites)
+- Ensure JAVA_HOME is set correctly
+- Restart terminal after installation
+
+**"Android SDK not found"**
+- Install Android Studio
+- The build will auto-download required SDK components
+
+**"Device not showing up"**
+- Enable USB debugging on phone
+- Use a data cable (not charging-only)
+- Try different USB port
+- Install phone manufacturer's USB drivers
+
+### Runtime Issues
+
+**App won't run on Windows**
 
 Enable Developer Mode:
 1. Press `Win + X` → "System"
@@ -247,17 +369,22 @@ Enable Developer Mode:
 4. Restart your terminal
 5. Run the app again
 
-### Images not showing
+**Images not showing**
 
 - Ensure app has storage permissions
 - Check that images exist at the stored path
 - Try re-adding the image to the goal
 
-### Streaks not updating
+**Streaks not updating**
 
 - Make sure you're marking habits on consecutive days
 - Check that the app has the correct date/time
 - Try refreshing the screen (pull down)
+
+**"Install blocked" on phone**
+- Go to Settings → Security → Unknown sources
+- Enable installation from unknown sources
+- Or enable for specific app (File Manager, Email)
 
 ## 🤝 Contributing
 
