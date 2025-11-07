@@ -6,12 +6,11 @@ cd /d "C:\Users\Hamed\Documents\smart-factory-app"
 
 REM Check git status
 echo Checking git status...
-git status --porcelain >nul 2>&1
-if %ERRORLEVEL% NEQ 0 (
-    echo No changes to commit.
-    pause
-    exit /b 0
-)
+for /f %%i in ('git status --porcelain') do goto :has_changes
+echo No changes to commit.
+pause
+exit /b 0
+:has_changes
 
 REM Show what will be committed
 echo.

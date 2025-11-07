@@ -34,7 +34,8 @@ Write-Host ""
 Write-Host "Staging all changes..." -ForegroundColor Cyan
 git add -A
 # Force add APK files to ensure they're included
-if (Test-Path "releases\*.apk") {
+$apkFiles = Get-ChildItem -Path "releases" -Filter "*.apk" -ErrorAction SilentlyContinue
+if ($apkFiles) {
     git add releases\*.apk
     Write-Host "Added APK files from releases folder" -ForegroundColor Cyan
 }

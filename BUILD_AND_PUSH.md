@@ -1,12 +1,5 @@
 scripts\build-apk.bat
 
-flutter build apk --release
+Copy-Item "build\app\outputs\flutter-apk\app-release.apk" "releases\smart-factory-v1.0.6.apk" -Force
 
-scripts\git-push.bat
-
-git add .
-git commit -m "Your commit message here"
-git push
-
-scripts\build-apk.bat
 scripts\git-push.bat
