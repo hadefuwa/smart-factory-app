@@ -1,10 +1,13 @@
 import 'dart:async';
 import 'dart:io' show Platform;
-import 'dart:typed_data';
+import 'package:flutter/services.dart';
 import '../models/data_stream_log.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:dart_snap7/dart_snap7.dart';
 
+/// PLC Communication Service using Moka7 via MethodChannel (Android only)
+///
+/// This service provides communication with Siemens S7 PLCs using the Moka7 library
+/// (pure Java implementation) on Android. No native libraries required!
 class PLCCommunicationService {
   static final PLCCommunicationService _instance = PLCCommunicationService._internal();
   factory PLCCommunicationService() => _instance;
@@ -15,11 +18,13 @@ class PLCCommunicationService {
   static const String _prefKeyRack = 'plc_rack';
   static const String _prefKeySlot = 'plc_slot';
 
+  // MethodChannel for communicating with Android native code
+  static const platform = MethodChannel('com.matrixtsl.smart_factory/plc');
+
   String? _plcIpAddress;
   int _rack = 0;
   int _slot = 1;
   bool _isLiveMode = true;
-  AsyncClient? _client;
   Timer? _connectionTimer;
   bool _isConnected = false;
   String _lastError = '';
@@ -102,13 +107,13 @@ class PLCCommunicationService {
     }
   }
 
-  // Connect to PLC using dart_snap7
+  // Connect to PLC using Moka7 via MethodChannel
   Future<bool> connect() async {
-    // Check if running on iOS
-    if (Platform.isIOS) {
+    // Check if running on Android
+    if (!Platform.isAndroid) {
       _lastError = 'PLC connection is only supported on Android devices';
       _logDataStream('TX', 'ERROR', 'PLATFORM_NOT_SUPPORTED',
-        '⚠️ PLC connection is only supported on Android. iOS support requires additional native library setup.');
+        '⚠️ PLC connection is only supported on Android (Moka7 implementation).');
       _isConnected = false;
       return false;
     }
@@ -129,60 +134,43 @@ class PLCCommunicationService {
       _lastConnectionAttempt = currentTime;
 
       // Check if already connected
-      if (_isConnected && _client != null) {
+      if (_isConnected) {
         return true;
       }
 
       _logDataStream('TX', 'CONNECTION', 'CONNECT',
-        'Connecting to S7-1200 at $_plcIpAddress (Rack: $_rack, Slot: $_slot) using dart_snap7...');
+        'Connecting to S7 PLC at $_plcIpAddress (Rack: $_rack, Slot: $_slot) using Moka7...');
 
       // Try to connect with retries
       for (int attempt = 0; attempt < _maxRetries; attempt++) {
         try {
-          // Cleanup any existing client
-          if (_client != null) {
-            try {
-              await _client!.disconnect();
-              await _client!.destroy();
-            } catch (e) {
-              _logDataStream('RX', 'DEBUG', 'CLEANUP', 'Error cleaning up old client: $e');
-            }
-            _client = null;
+          _logDataStream('TX', 'MOKA7', 'CONNECT',
+            'Attempting connection (${attempt + 1}/$_maxRetries)...');
+
+          final result = await platform.invokeMethod('connect', {
+            'ip': _plcIpAddress,
+            'rack': _rack,
+            'slot': _slot,
+          });
+
+          if (result['success'] == true) {
+            _isConnected = true;
+            _lastError = '';
+            _logDataStream('RX', 'CONNECTION', 'CONNECTED',
+              '✓ Successfully connected to S7 PLC using Moka7! ${result['message']}');
+
+            // Start periodic status check
+            _startPeriodicStatusCheck();
+            return true;
           }
-
-          // Create new AsyncClient
-          _client = AsyncClient();
-
-          _logDataStream('TX', 'SNAP7', 'INIT', 'Initializing Snap7 client (attempt ${attempt + 1}/$_maxRetries)');
-          await _client!.init();
-
-          _logDataStream('TX', 'SNAP7', 'CONNECT', 'Connecting to PLC...');
-          await _client!.connect(_plcIpAddress!, _rack, _slot);
-
-          _isConnected = true;
-          _lastError = '';
-          _logDataStream('RX', 'CONNECTION', 'CONNECTED',
-            'Successfully connected to S7-1200 using dart_snap7!');
-
-          // Start periodic status check
-          _startPeriodicStatusCheck();
-          return true;
-
+        } on PlatformException catch (e) {
+          _lastError = 'Connection error: ${e.message}';
+          _logDataStream('RX', 'ERROR', 'CONNECTION_FAILED',
+            '${e.message} (attempt ${attempt + 1}/$_maxRetries)');
         } catch (e) {
           _lastError = 'Connection error: $e';
           _logDataStream('RX', 'ERROR', 'CONNECTION_FAILED',
             '$e (attempt ${attempt + 1}/$_maxRetries)');
-
-          // Cleanup on failure
-          if (_client != null) {
-            try {
-              await _client!.disconnect();
-              await _client!.destroy();
-            } catch (cleanupError) {
-              _logDataStream('RX', 'DEBUG', 'CLEANUP_ERROR', 'Error during cleanup: $cleanupError');
-            }
-            _client = null;
-          }
         }
 
         // Wait before retry
@@ -196,15 +184,6 @@ class PLCCommunicationService {
     } catch (e) {
       _lastError = 'Connection error: $e';
       _logDataStream('RX', 'ERROR', 'CONNECTION_FAILED', e.toString());
-      if (_client != null) {
-        try {
-          await _client!.disconnect();
-          await _client!.destroy();
-        } catch (cleanupError) {
-          // Ignore cleanup errors
-        }
-        _client = null;
-      }
       _isConnected = false;
       return false;
     }
@@ -215,22 +194,22 @@ class PLCCommunicationService {
     _connectionTimer?.cancel();
     _connectionTimer = null;
 
-    if (_client != null) {
+    if (_isConnected && Platform.isAndroid) {
       _logDataStream('TX', 'CONNECTION', 'DISCONNECT', 'Disconnecting from PLC...');
       try {
-        await _client!.disconnect();
-        await _client!.destroy();
+        await platform.invokeMethod('disconnect');
+        _isConnected = false;
+        _logDataStream('RX', 'CONNECTION', 'DISCONNECTED', 'Disconnected from PLC');
       } catch (e) {
         _logDataStream('RX', 'ERROR', 'DISCONNECT', 'Error during disconnect: $e');
       }
-      _client = null;
-      _isConnected = false;
     }
+    _isConnected = false;
   }
 
   // Read data block bytes
   Future<Uint8List?> readDataBlock(int dbNumber, int start, int size) async {
-    if (!_isConnected || _client == null) {
+    if (!_isConnected) {
       _logDataStream('TX', 'ERROR', 'READ', 'Not connected to PLC');
       return null;
     }
@@ -239,12 +218,23 @@ class PLCCommunicationService {
       _logDataStream('TX', 'S7', 'READ_DB',
         'Reading DB$dbNumber from byte $start, size $size bytes');
 
-      final data = await _client!.readDataBlock(dbNumber, start, size);
+      final result = await platform.invokeMethod('readDB', {
+        'dbNumber': dbNumber,
+        'start': start,
+        'size': size,
+      });
+
+      // Convert List<dynamic> to Uint8List
+      final data = Uint8List.fromList(List<int>.from(result));
 
       _logDataStream('RX', 'S7', 'READ_DB',
         'Read ${data.length} bytes: ${_hexDump(data)}');
 
       return data;
+    } on PlatformException catch (e) {
+      _lastError = 'Error reading DB$dbNumber: ${e.message}';
+      _logDataStream('RX', 'ERROR', 'READ_DB', _lastError);
+      return null;
     } catch (e) {
       _lastError = 'Error reading DB$dbNumber: $e';
       _logDataStream('RX', 'ERROR', 'READ_DB', _lastError);
@@ -254,7 +244,7 @@ class PLCCommunicationService {
 
   // Write data block bytes
   Future<bool> writeDataBlock(int dbNumber, int start, Uint8List data) async {
-    if (!_isConnected || _client == null) {
+    if (!_isConnected) {
       _logDataStream('TX', 'ERROR', 'WRITE', 'Not connected to PLC');
       return false;
     }
@@ -263,10 +253,18 @@ class PLCCommunicationService {
       _logDataStream('TX', 'S7', 'WRITE_DB',
         'Writing DB$dbNumber at byte $start, ${data.length} bytes: ${_hexDump(data)}');
 
-      await _client!.writeDataBlock(dbNumber, start, data);
+      await platform.invokeMethod('writeDB', {
+        'dbNumber': dbNumber,
+        'start': start,
+        'data': data.toList(),
+      });
 
       _logDataStream('RX', 'S7', 'WRITE_DB', 'Write successful');
       return true;
+    } on PlatformException catch (e) {
+      _lastError = 'Error writing DB$dbNumber: ${e.message}';
+      _logDataStream('RX', 'ERROR', 'WRITE_DB', _lastError);
+      return false;
     } catch (e) {
       _lastError = 'Error writing DB$dbNumber: $e';
       _logDataStream('RX', 'ERROR', 'WRITE_DB', _lastError);
@@ -274,63 +272,38 @@ class PLCCommunicationService {
     }
   }
 
-  // Read Merkers (M memory)
+  // Read Merkers (M memory) - Not implemented in basic Moka7 setup
+  // For merkers, you would need to extend the Android implementation
   Future<Uint8List?> readMerkers(int start, int size) async {
-    if (!_isConnected || _client == null) {
-      _logDataStream('TX', 'ERROR', 'READ', 'Not connected to PLC');
-      return null;
-    }
-
-    try {
-      _logDataStream('TX', 'S7', 'READ_MERKERS',
-        'Reading Merkers from M$start, size $size bytes');
-
-      final data = await _client!.readMerkers(start, size);
-
-      _logDataStream('RX', 'S7', 'READ_MERKERS',
-        'Read ${data.length} bytes: ${_hexDump(data)}');
-
-      return data;
-    } catch (e) {
-      _lastError = 'Error reading Merkers: $e';
-      _logDataStream('RX', 'ERROR', 'READ_MERKERS', _lastError);
-      return null;
-    }
+    _logDataStream('TX', 'ERROR', 'READ_MERKERS',
+      'Merkers not yet implemented in Moka7 wrapper. Use readDataBlock instead.');
+    return null;
   }
 
-  // Write Merkers (M memory)
+  // Write Merkers (M memory) - Not implemented in basic Moka7 setup
   Future<bool> writeMerkers(int start, Uint8List data) async {
-    if (!_isConnected || _client == null) {
-      _logDataStream('TX', 'ERROR', 'WRITE', 'Not connected to PLC');
-      return false;
-    }
-
-    try {
-      _logDataStream('TX', 'S7', 'WRITE_MERKERS',
-        'Writing Merkers at M$start, ${data.length} bytes: ${_hexDump(data)}');
-
-      await _client!.writeMerkers(start, data);
-
-      _logDataStream('RX', 'S7', 'WRITE_MERKERS', 'Write successful');
-      return true;
-    } catch (e) {
-      _lastError = 'Error writing Merkers: $e';
-      _logDataStream('RX', 'ERROR', 'WRITE_MERKERS', _lastError);
-      return false;
-    }
+    _logDataStream('TX', 'ERROR', 'WRITE_MERKERS',
+      'Merkers not yet implemented in Moka7 wrapper. Use writeDataBlock instead.');
+    return false;
   }
 
   // Read REAL (float) value from data block
   Future<double?> readDbReal(int dbNumber, int offset) async {
     try {
-      final data = await readDataBlock(dbNumber, offset, 4);
-      if (data == null || data.length < 4) {
-        _lastError = 'Error reading DB$dbNumber.DBD$offset: Invalid data';
+      if (!_isConnected) {
         return null;
       }
 
-      final byteData = ByteData.view(data.buffer);
-      return byteData.getFloat32(0, Endian.big);
+      final result = await platform.invokeMethod('readReal', {
+        'dbNumber': dbNumber,
+        'byteOffset': offset,
+      });
+
+      return (result as num).toDouble();
+    } on PlatformException catch (e) {
+      _lastError = 'Error reading DB$dbNumber.DBD$offset: ${e.message}';
+      _logDataStream('RX', 'ERROR', 'READ_REAL', _lastError);
+      return null;
     } catch (e) {
       _lastError = 'Error reading DB$dbNumber.DBD$offset: $e';
       _logDataStream('RX', 'ERROR', 'READ_REAL', _lastError);
@@ -341,11 +314,21 @@ class PLCCommunicationService {
   // Write REAL (float) value to data block
   Future<bool> writeDbReal(int dbNumber, int offset, double value) async {
     try {
-      final byteData = ByteData(4);
-      byteData.setFloat32(0, value, Endian.big);
-      final data = byteData.buffer.asUint8List();
+      if (!_isConnected) {
+        return false;
+      }
 
-      return await writeDataBlock(dbNumber, offset, data);
+      await platform.invokeMethod('writeReal', {
+        'dbNumber': dbNumber,
+        'byteOffset': offset,
+        'value': value,
+      });
+
+      return true;
+    } on PlatformException catch (e) {
+      _lastError = 'Error writing DB$dbNumber.DBD$offset: ${e.message}';
+      _logDataStream('TX', 'ERROR', 'WRITE_REAL', _lastError);
+      return false;
     } catch (e) {
       _lastError = 'Error writing DB$dbNumber.DBD$offset: $e';
       _logDataStream('TX', 'ERROR', 'WRITE_REAL', _lastError);
@@ -361,13 +344,21 @@ class PLCCommunicationService {
         return null;
       }
 
-      final data = await readDataBlock(dbNumber, byteOffset, 1);
-      if (data == null || data.isEmpty) {
-        _lastError = 'Error reading DB$dbNumber.DBX$byteOffset.$bitOffset: Invalid data';
+      if (!_isConnected) {
         return null;
       }
 
-      return data[0].getBit(bitOffset);
+      final result = await platform.invokeMethod('readBool', {
+        'dbNumber': dbNumber,
+        'byteOffset': byteOffset,
+        'bitOffset': bitOffset,
+      });
+
+      return result as bool;
+    } on PlatformException catch (e) {
+      _lastError = 'Error reading DB$dbNumber.DBX$byteOffset.$bitOffset: ${e.message}';
+      _logDataStream('RX', 'ERROR', 'READ_BOOL', _lastError);
+      return null;
     } catch (e) {
       _lastError = 'Error reading DB$dbNumber.DBX$byteOffset.$bitOffset: $e';
       _logDataStream('RX', 'ERROR', 'READ_BOOL', _lastError);
@@ -383,18 +374,22 @@ class PLCCommunicationService {
         return false;
       }
 
-      // Read current byte
-      final currentData = await readDataBlock(dbNumber, byteOffset, 1);
-      if (currentData == null || currentData.isEmpty) {
-        _lastError = 'Error reading DB$dbNumber.DBX$byteOffset.$bitOffset for write';
+      if (!_isConnected) {
         return false;
       }
 
-      // Modify bit
-      final byteValue = currentData[0].setBit(bitOffset, value);
+      await platform.invokeMethod('writeBool', {
+        'dbNumber': dbNumber,
+        'byteOffset': byteOffset,
+        'bitOffset': bitOffset,
+        'value': value,
+      });
 
-      // Write back
-      return await writeDataBlock(dbNumber, byteOffset, Uint8List.fromList([byteValue]));
+      return true;
+    } on PlatformException catch (e) {
+      _lastError = 'Error writing DB$dbNumber.DBX$byteOffset.$bitOffset: ${e.message}';
+      _logDataStream('TX', 'ERROR', 'WRITE_BOOL', _lastError);
+      return false;
     } catch (e) {
       _lastError = 'Error writing DB$dbNumber.DBX$byteOffset.$bitOffset: $e';
       _logDataStream('TX', 'ERROR', 'WRITE_BOOL', _lastError);
@@ -405,14 +400,20 @@ class PLCCommunicationService {
   // Read INT value from data block
   Future<int?> readDbInt(int dbNumber, int offset) async {
     try {
-      final data = await readDataBlock(dbNumber, offset, 2);
-      if (data == null || data.length < 2) {
-        _lastError = 'Error reading DB$dbNumber.DBW$offset: Invalid data';
+      if (!_isConnected) {
         return null;
       }
 
-      final byteData = ByteData.view(data.buffer);
-      return byteData.getInt16(0, Endian.big);
+      final result = await platform.invokeMethod('readInt', {
+        'dbNumber': dbNumber,
+        'byteOffset': offset,
+      });
+
+      return result as int;
+    } on PlatformException catch (e) {
+      _lastError = 'Error reading DB$dbNumber.DBW$offset: ${e.message}';
+      _logDataStream('RX', 'ERROR', 'READ_INT', _lastError);
+      return null;
     } catch (e) {
       _lastError = 'Error reading DB$dbNumber.DBW$offset: $e';
       _logDataStream('RX', 'ERROR', 'READ_INT', _lastError);
@@ -423,11 +424,21 @@ class PLCCommunicationService {
   // Write INT value to data block
   Future<bool> writeDbInt(int dbNumber, int offset, int value) async {
     try {
-      final byteData = ByteData(2);
-      byteData.setInt16(0, value, Endian.big);
-      final data = byteData.buffer.asUint8List();
+      if (!_isConnected) {
+        return false;
+      }
 
-      return await writeDataBlock(dbNumber, offset, data);
+      await platform.invokeMethod('writeInt', {
+        'dbNumber': dbNumber,
+        'byteOffset': offset,
+        'value': value,
+      });
+
+      return true;
+    } on PlatformException catch (e) {
+      _lastError = 'Error writing DB$dbNumber.DBW$offset: ${e.message}';
+      _logDataStream('TX', 'ERROR', 'WRITE_INT', _lastError);
+      return false;
     } catch (e) {
       _lastError = 'Error writing DB$dbNumber.DBW$offset: $e';
       _logDataStream('TX', 'ERROR', 'WRITE_INT', _lastError);
@@ -435,53 +446,67 @@ class PLCCommunicationService {
     }
   }
 
-  // Read Merker bit
-  Future<bool?> readMBit(int byteOffset, int bitOffset) async {
+  // Read DINT value from data block
+  Future<int?> readDbDInt(int dbNumber, int offset) async {
     try {
-      if (bitOffset < 0 || bitOffset > 7) {
-        _lastError = 'Bit offset must be between 0 and 7';
+      if (!_isConnected) {
         return null;
       }
 
-      final data = await readMerkers(byteOffset, 1);
-      if (data == null || data.isEmpty) {
-        _lastError = 'Error reading M$byteOffset.$bitOffset: Invalid data';
-        return null;
-      }
+      final result = await platform.invokeMethod('readDInt', {
+        'dbNumber': dbNumber,
+        'byteOffset': offset,
+      });
 
-      return data[0].getBit(bitOffset);
+      return result as int;
+    } on PlatformException catch (e) {
+      _lastError = 'Error reading DB$dbNumber.DBD$offset: ${e.message}';
+      _logDataStream('RX', 'ERROR', 'READ_DINT', _lastError);
+      return null;
     } catch (e) {
-      _lastError = 'Error reading M$byteOffset.$bitOffset: $e';
-      _logDataStream('RX', 'ERROR', 'READ_M_BIT', _lastError);
+      _lastError = 'Error reading DB$dbNumber.DBD$offset: $e';
+      _logDataStream('RX', 'ERROR', 'READ_DINT', _lastError);
       return null;
     }
   }
 
-  // Write Merker bit
-  Future<bool> writeMBit(int byteOffset, int bitOffset, bool value) async {
+  // Write DINT value to data block
+  Future<bool> writeDbDInt(int dbNumber, int offset, int value) async {
     try {
-      if (bitOffset < 0 || bitOffset > 7) {
-        _lastError = 'Bit offset must be between 0 and 7';
+      if (!_isConnected) {
         return false;
       }
 
-      // Read current byte
-      final currentData = await readMerkers(byteOffset, 1);
-      if (currentData == null || currentData.isEmpty) {
-        _lastError = 'Error reading M$byteOffset.$bitOffset for write';
-        return false;
-      }
+      await platform.invokeMethod('writeDInt', {
+        'dbNumber': dbNumber,
+        'byteOffset': offset,
+        'value': value,
+      });
 
-      // Modify bit
-      final byteValue = currentData[0].setBit(bitOffset, value);
-
-      // Write back
-      return await writeMerkers(byteOffset, Uint8List.fromList([byteValue]));
+      return true;
+    } on PlatformException catch (e) {
+      _lastError = 'Error writing DB$dbNumber.DBD$offset: ${e.message}';
+      _logDataStream('TX', 'ERROR', 'WRITE_DINT', _lastError);
+      return false;
     } catch (e) {
-      _lastError = 'Error writing M$byteOffset.$bitOffset: $e';
-      _logDataStream('TX', 'ERROR', 'WRITE_M_BIT', _lastError);
+      _lastError = 'Error writing DB$dbNumber.DBD$offset: $e';
+      _logDataStream('TX', 'ERROR', 'WRITE_DINT', _lastError);
       return false;
     }
+  }
+
+  // Read Merker bit - Not implemented in basic setup
+  Future<bool?> readMBit(int byteOffset, int bitOffset) async {
+    _logDataStream('TX', 'ERROR', 'READ_M_BIT',
+      'Merker bits not yet implemented in Moka7 wrapper.');
+    return null;
+  }
+
+  // Write Merker bit - Not implemented in basic setup
+  Future<bool> writeMBit(int byteOffset, int bitOffset, bool value) async {
+    _logDataStream('TX', 'ERROR', 'WRITE_M_BIT',
+      'Merker bits not yet implemented in Moka7 wrapper.');
+    return false;
   }
 
   // Start periodic status check
@@ -490,10 +515,14 @@ class PLCCommunicationService {
     _connectionTimer = Timer.periodic(
       const Duration(seconds: 2),
       (_) async {
-        if (_isConnected && _isLiveMode && _client != null) {
+        if (_isConnected && _isLiveMode && Platform.isAndroid) {
           try {
-            // Example: read DB1 first 10 bytes as a heartbeat
-            await readDataBlock(1, 0, 10);
+            // Check connection status via MethodChannel
+            final status = await platform.invokeMethod('getConnectionStatus');
+            if (status['connected'] != true) {
+              _isConnected = false;
+              _logDataStream('RX', 'ERROR', 'HEARTBEAT', 'Connection lost');
+            }
           } catch (e) {
             _logDataStream('RX', 'ERROR', 'HEARTBEAT', 'Heartbeat failed: $e');
           }

@@ -105,14 +105,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.8"
-  dart_snap7:
-    dependency: "direct main"
-    description:
-      name: dart_snap7
-      sha256: "559e18bf41296eaf04f3cff85f1a5f8a83006c5395998d24341875ac6601653f"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.5.3"
   dbus:
     dependency: transitive
     description:

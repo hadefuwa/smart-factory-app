@@ -23,7 +23,7 @@ if (flutterVersionName == null) {
 }
 
 android {
-    namespace "com.matrixtsl.matrix_app"
+    namespace "com.matrixtsl.smart_factory"
     compileSdk 36
     ndkVersion flutter.ndkVersion
 
@@ -38,23 +38,27 @@ android {
 
     sourceSets {
         main.java.srcDirs += 'src/main/kotlin'
-        main.jniLibs.srcDirs = ['src/main/jniLibs']
+        // No longer need jniLibs with Moka7 pure Java implementation
     }
 
     defaultConfig {
-        applicationId "com.matrixtsl.matrix_app"
+        applicationId "com.matrixtsl.smart_factory"
         minSdkVersion flutter.minSdkVersion
         targetSdkVersion 36
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
-        ndk {
-            abiFilters 'armeabi-v7a', 'arm64-v8a'
-        }
+        // No longer need NDK ABI filters with Moka7 pure Java implementation
     }
 
     buildTypes {
         release {
             signingConfig signingConfigs.debug
+            // Disable minification to avoid R8 issues with optional dependencies
+            // Re-enable later with proper ProGuard rules if needed
+            minifyEnabled false
+            shrinkResources false
+            // ProGuard rules for JNI and native libraries (when minification is enabled)
+            // proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
 }
@@ -63,5 +67,8 @@ flutter {
     source '../..'
 }
 
-dependencies {}
+dependencies {
+    // Moka7-live: Java port of Snap7 for S7 PLC communication
+    implementation 'si.trina:moka7-live:0.0.11'
+}
 
