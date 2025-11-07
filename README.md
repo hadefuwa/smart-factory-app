@@ -1,295 +1,206 @@
-# Matrix TSL Product Showcase App
+# Smart Factory Control App
 
-A beautiful Flutter app showcasing Matrix TSL industrial training products. Browse and explore interactive product websites directly within the app.
+A teaching and control companion for the Smart Factory training rig. This mobile app provides students and instructors with comprehensive control, monitoring, and learning tools for Industry 4.0 manufacturing education.
 
-![Flutter](https://img.shields.io/badge/Flutter-3.0+-02569B?logo=flutter)
-![Android](https://img.shields.io/badge/Android-21+-3DDC84?logo=android)
-![License](https://img.shields.io/badge/license-MIT-blue)
+## Features
 
-## ✨ Features
+### 🏠 Home Screen
+- Real-time system status monitoring
+- Live metrics display (Produced, Rejects, FPY, Throughput, Uptime)
+- Quick control buttons (Start, Stop, Reset Faults)
+- Connection status indicator (Simulation mode)
 
-### 🎯 Product Showcase
-- Browse three Matrix TSL training products
-- Beautiful card-based interface
-- Direct access to interactive product websites
-- Smooth navigation and loading states
+### ▶️ Run Control
+- Recipe management (Steel/Aluminium/Plastic Sorting)
+- Conveyor speed control (0-100%)
+- Batch target configuration
+- Live material counters (Steel, Aluminium, Plastic, Rejects, Remaining)
+- Manual jog controls for all actuators
+- Safety interlocks enforcement
 
-### 📱 Products Included
+### 🔌 I/O Live
+- Real-time input monitoring (First Gate, Inductive, Capacitive, Photo Gate, E-Stop, Gantry Home)
+- Output control (Conveyor, Paddles, Plunger, Vacuum, Gantry)
+- Interactive output activation with confirmation dialogs
+- Visual status indicators with animated lights
+- Safety blocking notifications
 
-1. **Maintenance of Closed Loop Systems (IM0004)**
-   - Comprehensive training platform for industrial maintenance technicians
-   - Master closed-loop control systems through interactive worksheets
-   - Real-world scenarios and practical training
+### 📚 Worksheets
+- 17 comprehensive learning activities
+- Progress tracking (percentage completion)
+- Step-by-step guided instructions
+- Topics include:
+  - Data logging and analytics
+  - Conveyor and sensor control
+  - Material sorting operations
+  - Manual jog procedures
+  - FPY and throughput analysis
+  - Safety interlock understanding
+  - Emergency stop procedures
+  - Batch production
+  - Pneumatic systems
+  - Fault diagnosis
+  - Predictive maintenance
+  - IO-Link technology
+  - Advanced analytics
 
-2. **PLC Fundamentals (IM6930)**
-   - Hands-on training platform for industrial maintenance and automation
-   - Features Siemens S7-1214 PLC and 7-inch Unified Basic HMI
-   - Real-world components and industrial wiring standards
+### 📊 Analytics
+- Real-time KPI tiles (Throughput, FPY, Rejects)
+- Performance charts visualization
+- CSV data export functionality
+  - Metrics export (timestamp, throughput, FPY, rejects, total)
+  - Event log export (timestamp, name, value, type)
+- Configurable time windows (15 min, 1 hour, today)
 
-3. **Matrix LOGO! (IM3214)**
-   - Modular industrial control training system
-   - Introduces learners to core concepts in industrial automation
-   - Features Siemens LOGO! PLC on custom Locktronics carrier plate
+### ⚙️ Settings
+- **Mode Selection**: Simulation (live hardware coming later)
+- **Simulator Configuration**:
+  - Speed scaling (0.1x - 2.0x)
+  - Material mix adjustment (Steel, Aluminium, Plastic percentages)
+- **Fault Injection**:
+  - Random faults toggle
+  - Manual fault triggers (E-Stop, Sensor Stuck, Paddle Jam, Vacuum Leak)
+- **About Information**: App version, quick help guide
 
-### 🎨 Beautiful UI
-- Material Design 3 theming
-- Smooth animations and transitions
-- Responsive layout
-- Professional blue color scheme
-- Dark mode support
+## Version 0 - Simulation Mode
 
-## 📱 Screenshots
+This initial release runs entirely on simulated data and works without physical hardware. The simulator accurately models:
 
-*Add screenshots of your app here*
+- **Conveyor System**: Virtual parts moving along the belt at configurable speeds
+- **Sensor Behavior**: First gate, inductive (steel detection), capacitive (aluminium detection), photo gate
+- **Sorting Logic**: Automatic paddle actuation based on material type
+- **Metrics Calculation**: Real-time FPY and throughput computation
+- **Fault Simulation**: E-Stop, sensor stuck, paddle jam, vacuum leak
+- **Safety Interlocks**:
+  - Plunger blocked while conveyor running
+  - All outputs disabled during E-Stop
+  - Clear blocking notifications
 
-## 📥 Download APK
+## Technical Details
 
-**Want to download the app directly to your phone?**
+### Architecture
+- **Framework**: Flutter (Dart)
+- **Design**: Material Design 3 with dark theme
+- **State Management**: Stream-based reactive architecture
+- **Simulation**: 10Hz update rate with virtual part tracking
+- **Data Logging**: Automatic metrics and event capture
 
-👉 **[Download MatrixTSL-v1.0.0.apk](https://github.com/hadefuwa/matrix-android-app/raw/main/releases/MatrixTSL-v1.0.0.apk)**
+### Color Scheme
+- **Green**: Running/OK states
+- **Amber**: Warning or paused states
+- **Red**: Fault or E-Stop states
+- **Blue**: Neutral information
+- **Purple**: Primary brand color
 
-Or visit the [releases folder](https://github.com/hadefuwa/matrix-android-app/tree/main/releases) for installation instructions.
+### Safety Features
+- Comprehensive interlock system preventing unsafe operations
+- Clear visual and text feedback for blocked actions
+- Single Reset Faults button on Home screen
+- Emergency stop simulation and recovery
 
-## 🚀 Getting Started
+## Future Development
+
+### Planned Features (Post-v0)
+- Live hardware connection via PLC/Raspberry Pi gateway
+- Real-time chart visualization with fl_chart library
+- Enhanced OEE (Overall Equipment Effectiveness) calculations
+- Multi-language support
+- User authentication for instructor/student roles
+- Cloud data synchronization
+- Custom worksheet creation tools
+
+## Building the App
 
 ### Prerequisites
+- Flutter SDK (>=3.0.0 <4.0.0)
+- Android SDK for Android builds
+- Xcode for iOS builds (macOS only)
 
-- Flutter SDK (3.0 or higher)
-- Android Studio (for Android development)
-- Android device or emulator (API 21+)
-
-### Installation
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/hadefuwa/habit-app.git
-   cd habit-app
-   ```
-
-2. **Install dependencies**
-   ```bash
-   flutter pub get
-   ```
-
-3. **Run the app**
-   ```bash
-   # On Windows desktop (recommended for testing)
-   flutter run -d windows
-   
-   # On Android device/emulator
-   flutter run
-   ```
-
-### Quick Start Scripts
-
-**Windows:**
-- Double-click `scripts\run-app.bat` to launch the app
-- Or use PowerShell: `.\scripts\run-app.ps1`
-
-**Command Line:**
-```bash
-# Add Flutter to PATH for easier access
-# Then simply run:
-flutter run -d windows
-```
-
-## 📖 How to Use
-
-1. **Browse Products**: View all available Matrix TSL products on the main screen
-2. **Select a Product**: Tap on any product card to view its interactive website
-3. **Navigate**: Use the webview to explore the product website
-4. **Refresh**: Tap the refresh button in the app bar to reload the page
-5. **Go Back**: Use the back button to return to the product list
-
-## 🏗️ Project Structure
-
-```
-lib/
-├── main.dart                    # App entry point
-├── models/                      # Data models
-│   └── product.dart            # Product model
-└── screens/                     # UI screens
-    ├── products_list_screen.dart    # Main product list screen
-    └── product_webview_screen.dart  # WebView screen for products
-```
-
-## 🛠️ Technologies Used
-
-- **Flutter** - Cross-platform UI framework
-- **WebView Flutter** - Embedded web content display
-- **Material Design 3** - Modern UI components
-
-## 📦 Dependencies
-
+### Dependencies
 ```yaml
 dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.6
   webview_flutter: ^4.4.2
+  youtube_player_iframe: ^4.0.4
+  url_launcher: ^6.2.5
+  timezone: ^0.9.2
+  flutter_svg: ^2.0.9
+  video_player: ^2.8.2
+  chewie: ^1.7.4
+  path_provider: ^2.1.1
 ```
 
-## 🔧 Configuration
-
-### Android Permissions
-
-The app requires the following permission (already configured in `AndroidManifest.xml`):
-- `INTERNET` - For loading web content
-
-
-## 📱 Building for Android
-
-### Quick Build
-
-Use the provided build scripts:
-
-**Windows (Command Prompt/PowerShell):**
+### Build Commands
 ```bash
-.\scripts\build-apk.bat
-```
+# Install dependencies
+flutter pub get
 
-Or manually:
-```bash
+# Run in debug mode
+flutter run
+
+# Build Android APK
 flutter build apk --release
+
+# Build iOS app
+flutter build ios --release
 ```
 
-The APK will be created at: `build\app\outputs\flutter-apk\app-release.apk`
+## App Structure
 
-### Prerequisites for Android Build
+```
+lib/
+├── main.dart                          # App entry point with routing
+├── models/
+│   ├── simulator_state.dart           # State enums and SimulatorState class
+│   ├── metrics_data.dart              # MetricsSnapshot, EventLogEntry, BatchRecord
+│   ├── worksheet.dart                 # Worksheet model and data
+│   └── product.dart                   # Legacy product model (for reference)
+├── services/
+│   └── simulator_service.dart         # Core simulation engine
+├── screens/
+│   ├── smart_factory_main.dart        # Main app with bottom navigation
+│   ├── sf_home_screen.dart            # Home/Dashboard screen
+│   ├── sf_run_screen.dart             # Run control screen
+│   ├── sf_io_screen.dart              # I/O monitoring screen
+│   ├── sf_worksheets_screen.dart      # Worksheets list and detail
+│   ├── sf_analytics_screen.dart       # Analytics and export
+│   └── sf_settings_screen.dart        # Settings and configuration
+└── widgets/
+    ├── hexagon_background.dart        # Animated background
+    └── logo_widget.dart               # App logo component
+```
 
-**Java 17 Required:**
+## Educational Value
 
-1. **Download Java 17:**
-   - Visit: https://adoptium.net/temurin/releases/?version=17
-   - Download Windows x64 installer (.msi)
+The Smart Factory app provides hands-on experience with:
+- **Industry 4.0 Concepts**: Real-time monitoring, data analytics, automation
+- **Manufacturing Metrics**: FPY, throughput, OEE, uptime tracking
+- **Control Systems**: PLC-style logic, interlocks, fault handling
+- **Quality Control**: Sensor-based sorting, reject tracking
+- **Predictive Maintenance**: Trend analysis, fault pattern recognition
+- **Data Analysis**: CSV export for external analysis tools
+- **Safety Protocols**: Emergency stop procedures, interlock compliance
 
-2. **Install:**
-   - Install to default location
-   - ✅ Check "Add to PATH" during installation
+## Support
 
-3. **Set JAVA_HOME:**
-   - Press `Win + X` → "System"
-   - "Advanced system settings" → "Environment Variables"
-   - Add new variable: `JAVA_HOME` = `C:\Program Files\Eclipse Adoptium\jdk-17.x.x-hotspot`
-   - Restart terminal
+For issues, questions, or contributions:
+- GitHub: https://github.com/hadefuwa/matrix-android-app
+- Email: support@matrixtsl.com
+- Website: https://www.matrixtsl.com/smartfactory/
 
-4. **Verify:**
-   ```bash
-   java -version
-   # Should show: openjdk version "17.x.x"
-   ```
+## License
 
-**Android SDK:**
+© 2025 Matrix TSL. All rights reserved.
 
-The project is configured with:
-- compileSdk: 36
-- targetSdk: 36
-- minSdk: 21 (Android 5.0+)
-- Android Gradle Plugin: 8.6.0
-- Kotlin: 2.1.0
-- Gradle: 8.7
+## Acknowledgments
 
-### Build Configuration
-
-The build scripts automatically:
-- Detect Java 17 installation
-- Configure Android SDK paths
-- Generate release APK (46MB)
-
-## 📲 Installing on Your Phone
-
-### Method 1: Transfer APK File (Recommended)
-
-1. **Build the APK** (see above)
-
-2. **Transfer to phone:**
-   - Email the APK to yourself
-   - Use Google Drive/Dropbox
-   - Transfer via USB cable
-   - Use Bluetooth
-
-3. **Install on phone:**
-   - Go to Settings → Security → Enable "Install unknown apps"
-   - Open the APK file on your phone
-   - Tap "Install"
-
-### Method 2: Direct USB Install
-
-1. **Enable USB Debugging on phone:**
-   - Settings → About phone
-   - Tap "Build number" 7 times
-   - Go to Settings → Developer options
-   - Enable "USB debugging"
-
-2. **Connect phone to computer via USB**
-
-3. **Install directly:**
-   ```bash
-   .\scripts\install-on-phone.bat
-   ```
-
-   Or manually:
-   ```bash
-   flutter run
-   ```
-
-### Method 3: Using Android Studio
-
-1. Open project in Android Studio
-2. Connect phone via USB (USB debugging enabled)
-3. Click the green "Run" button (▶️)
-4. Select your phone from device list
-
-## 🐛 Troubleshooting
-
-### Build Issues
-
-**"Java 17 not found"**
-- Install Java 17 from Adoptium (see Prerequisites)
-- Ensure JAVA_HOME is set correctly
-- Restart terminal after installation
-
-**"Android SDK not found"**
-- Install Android Studio
-- The build will auto-download required SDK components
-
-**"Device not showing up"**
-- Enable USB debugging on phone
-- Use a data cable (not charging-only)
-- Try different USB port
-- Install phone manufacturer's USB drivers
-
-### Runtime Issues
-
-**Web pages not loading**
-- Check internet connection
-- Verify the product URLs are accessible
-- Try refreshing the page using the refresh button
-
-**"Install blocked" on phone**
-- Go to Settings → Security → Unknown sources
-- Enable installation from unknown sources
-- Or enable for specific app (File Manager, Email)
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## 📝 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 🙏 Acknowledgments
-
-- Built with Flutter
-- Material Design 3 components
-- Icons from Material Icons
-- Product information from Matrix TSL
-
-## 📞 Support
-
-For issues, questions, or suggestions, please open an issue on GitHub.
+Built with Flutter for cross-platform mobile deployment. Designed for Matrix TSL Smart Factory training systems.
 
 ---
 
-**Made with ❤️ for showcasing Matrix TSL industrial training products!**
+**Version**: 1.0.5
+**Last Updated**: 2025-11-07
+**Mode**: Simulation (v0)
+**Status**: Production Ready

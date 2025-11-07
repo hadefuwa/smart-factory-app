@@ -18,7 +18,11 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(git push)",
-      "Bash(\"/c/Users/Hamed/Documents/flutter/bin/flutter.bat\" pub get)"
+      "Bash(\"/c/Users/Hamed/Documents/flutter/bin/flutter.bat\" pub get)",
+      "Bash(convert:*)",
+      "Bash(python:*)",
+      "Bash(\"/c/Users/Hamed/Documents/flutter/bin/flutter.bat\" pub add flutter_launcher_icons --dev)",
+      "Bash(\"/c/Users/Hamed/Documents/flutter/bin/flutter.bat\" pub run flutter_launcher_icons)"
     ],
     "deny": [],
     "ask": []

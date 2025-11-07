@@ -1,0 +1,95 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background gradient -->
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a2e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0f0f1e;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="factoryGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#9c27b0;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#7b1fa2;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#e0b0ff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#9c27b0;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="512" height="512" rx="80" fill="url(#bgGrad)"/>
+  
+  <!-- Factory building main body -->
+  <rect x="100" y="200" width="140" height="200" fill="url(#factoryGrad)" stroke="#e0b0ff" stroke-width="4"/>
+  <rect x="270" y="160" width="140" height="240" fill="url(#factoryGrad)" stroke="#e0b0ff" stroke-width="4"/>
+  
+  <!-- Windows on left building -->
+  <rect x="120" y="220" width="30" height="35" fill="#64b5f6" opacity="0.8"/>
+  <rect x="170" y="220" width="30" height="35" fill="#64b5f6" opacity="0.8"/>
+  <rect x="120" y="280" width="30" height="35" fill="#64b5f6" opacity="0.8"/>
+  <rect x="170" y="280" width="30" height="35" fill="#64b5f6" opacity="0.8"/>
+  <rect x="120" y="340" width="30" height="35" fill="#64b5f6" opacity="0.8"/>
+  <rect x="170" y="340" width="30" height="35" fill="#64b5f6" opacity="0.8"/>
+  
+  <!-- Windows on right building -->
+  <rect x="290" y="180" width="30" height="35" fill="#64b5f6" opacity="0.8"/>
+  <rect x="340" y="180" width="30" height="35" fill="#64b5f6" opacity="0.8"/>
+  <rect x="290" y="240" width="30" height="35" fill="#64b5f6" opacity="0.8"/>
+  <rect x="340" y="240" width="30" height="35" fill="#64b5f6" opacity="0.8"/>
+  <rect x="290" y="300" width="30" height="35" fill="#64b5f6" opacity="0.8"/>
+  <rect x="340" y="300" width="30" height="35" fill="#64b5f6" opacity="0.8"/>
+  <rect x="290" y="360" width="30" height="35" fill="#64b5f6" opacity="0.8"/>
+  <rect x="340" y="360" width="30" height="35" fill="#64b5f6" opacity="0.8"/>
+  
+  <!-- Smokestacks -->
+  <rect x="140" y="120" width="35" height="80" fill="#7b1fa2" stroke="#e0b0ff" stroke-width="3"/>
+  <rect x="310" y="80" width="35" height="80" fill="#7b1fa2" stroke="#e0b0ff" stroke-width="3"/>
+  
+  <!-- Smoke puffs -->
+  <circle cx="157" cy="100" r="20" fill="#e0b0ff" opacity="0.6"/>
+  <circle cx="147" cy="85" r="18" fill="#e0b0ff" opacity="0.5"/>
+  <circle cx="167" cy="80" r="16" fill="#e0b0ff" opacity="0.4"/>
+  
+  <circle cx="327" cy="60" r="22" fill="#e0b0ff" opacity="0.6"/>
+  <circle cx="317" cy="45" r="20" fill="#e0b0ff" opacity="0.5"/>
+  <circle cx="337" cy="40" r="18" fill="#e0b0ff" opacity="0.4"/>
+  
+  <!-- Conveyor belt at bottom -->
+  <rect x="80" y="410" width="350" height="25" rx="5" fill="#546e7a" stroke="#e0b0ff" stroke-width="2"/>
+  <rect x="90" y="415" width="15" height="15" rx="2" fill="#ff9800"/>
+  <rect x="130" y="415" width="15" height="15" rx="2" fill="#4caf50"/>
+  <rect x="170" y="415" width="15" height="15" rx="2" fill="#2196f3"/>
+  <rect x="210" y="415" width="15" height="15" rx="2" fill="#ff9800"/>
+  <rect x="250" y="415" width="15" height="15" rx="2" fill="#4caf50"/>
+  <rect x="290" y="415" width="15" height="15" rx="2" fill="#2196f3"/>
+  <rect x="330" y="415" width="15" height="15" rx="2" fill="#ff9800"/>
+  <rect x="370" y="415" width="15" height="15" rx="2" fill="#4caf50"/>
+  <rect x="410" y="415" width="15" height="15" rx="2" fill="#2196f3"/>
+  
+  <!-- Gears decoration -->
+  <g transform="translate(50, 320)">
+    <circle cx="0" cy="0" r="25" fill="none" stroke="url(#accentGrad)" stroke-width="4"/>
+    <circle cx="0" cy="0" r="10" fill="url(#accentGrad)"/>
+    <rect x="-3" y="-30" width="6" height="60" fill="url(#accentGrad)"/>
+    <rect x="-30" y="-3" width="60" height="6" fill="url(#accentGrad)"/>
+    <rect x="-21" y="-21" width="6" height="42" fill="url(#accentGrad)" transform="rotate(45)"/>
+    <rect x="-21" y="-21" width="6" height="42" fill="url(#accentGrad)" transform="rotate(-45)"/>
+  </g>
+  
+  <g transform="translate(460, 250)">
+    <circle cx="0" cy="0" r="20" fill="none" stroke="url(#accentGrad)" stroke-width="3"/>
+    <circle cx="0" cy="0" r="8" fill="url(#accentGrad)"/>
+    <rect x="-2" y="-24" width="4" height="48" fill="url(#accentGrad)"/>
+    <rect x="-24" y="-2" width="48" height="4" fill="url(#accentGrad)"/>
+    <rect x="-17" y="-17" width="4" height="34" fill="url(#accentGrad)" transform="rotate(45)"/>
+    <rect x="-17" y="-17" width="4" height="34" fill="url(#accentGrad)" transform="rotate(-45)"/>
+  </g>
+  
+  <!-- Industry 4.0 circuit pattern overlay -->
+  <path d="M 440 450 L 460 450 L 460 470 M 440 470 L 420 470" stroke="#9c27b0" stroke-width="2" fill="none" opacity="0.5"/>
+  <circle cx="460" cy="450" r="3" fill="#e0b0ff" opacity="0.7"/>
+  <circle cx="420" cy="470" r="3" fill="#e0b0ff" opacity="0.7"/>
+  
+  <path d="M 50 150 L 70 150 L 70 130 M 50 130 L 30 130" stroke="#9c27b0" stroke-width="2" fill="none" opacity="0.5"/>
+  <circle cx="70" cy="150" r="3" fill="#e0b0ff" opacity="0.7"/>
+  <circle cx="30" cy="130" r="3" fill="#e0b0ff" opacity="0.7"/>
+</svg>
