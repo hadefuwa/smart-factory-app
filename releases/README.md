@@ -1,6 +1,62 @@
 # Smart Factory App Releases
 
-## Version 1.0.6 (Latest)
+## Version 1.0.9 (Latest) - 2025-11-07
+
+**Download:** [smart-factory-v1.0.9.apk](smart-factory-v1.0.9.apk)
+
+### Major Update: libsnap7.so Error Fixed Permanently!
+
+This release completely solves the `Failed to load dynamic library libsnap7.so` error by migrating from dart_snap7 (native libraries) to **Moka7** (pure Java).
+
+### What's New
+- ✅ **Migrated to Moka7** - Pure Java S7 PLC communication library
+- ✅ **Removed libsnap7.so** - No native libraries needed
+- ✅ **Works on ALL Android devices** - No ABI compatibility issues
+- ✅ **Added Moka7-live v0.0.11** - Official Java port of Snap7
+- ✅ **Created PLCManager.kt** - Comprehensive PLC communication manager
+- ✅ **MethodChannel bridge** - Flutter ↔ Android communication
+
+### Features
+- **PLC Communication**: Connect to S7-1200, S7-1500, S7-300, S7-400
+- **Data Types**: Read/Write BOOL, INT, DINT, REAL, byte arrays
+- **Reliability**: Automatic connection retry and status monitoring
+- **Logging**: Data stream logging for debugging
+- **Platform**: Android only (pure Java implementation)
+
+### Installation
+1. **Uninstall old version first (important!):**
+   ```bash
+   adb uninstall com.matrixtsl.smart_factory
+   ```
+2. Download and install `smart-factory-v1.0.9.apk`
+3. Configure PLC settings in app:
+   - Settings → PLC Configuration
+   - Set IP address (e.g., 192.168.0.99)
+   - Set Rack/Slot (S7-1200/1500: Rack 0, Slot 1)
+   - Enable Live Mode
+
+### What This Fixes
+- ✅ libsnap7.so not found error (permanently fixed)
+- ✅ ABI compatibility issues
+- ✅ Native library loading errors
+- ✅ Platform-specific build problems
+
+### Documentation
+- [MOKA7_IMPLEMENTATION.md](../MOKA7_IMPLEMENTATION.md) - Complete technical documentation
+- [MOKA7_QUICK_START.md](../MOKA7_QUICK_START.md) - Quick start guide
+- [MIGRATION_SUMMARY.md](../MIGRATION_SUMMARY.md) - Full migration details
+
+### File Info
+- **File**: smart-factory-v1.0.9.apk
+- **Size**: 62.0 MB
+- **Build Type**: Release
+- **Version**: 1.0.9+2
+- **Minimum SDK**: 21 (Android 5.0)
+- **Target SDK**: 36 (Android 14)
+
+---
+
+## Version 1.0.6
 
 **Download:** [smart-factory-v1.0.6.apk](smart-factory-v1.0.6.apk)
 
