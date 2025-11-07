@@ -33,6 +33,11 @@ REM Stage all changes
 echo.
 echo Staging all changes...
 git add -A
+REM Force add APK files to ensure they're included
+if exist releases\*.apk (
+    git add releases\*.apk
+    echo Added APK files from releases folder
+)
 
 REM Commit
 echo Committing changes...

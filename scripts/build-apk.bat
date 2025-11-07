@@ -77,6 +77,12 @@ if %ERRORLEVEL% EQU 0 (
         echo.
         echo ✅ APK copied to releases folder!
         echo.
+        
+        REM Add APK to git staging
+        echo Adding APK to git staging...
+        git add "%RELEASES_PATH%"
+        echo ✅ APK added to git staging!
+        echo.
 
         REM Also rename in build folder
         echo Renaming APK in build folder to %NEW_APK_NAME%...

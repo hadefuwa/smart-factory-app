@@ -79,6 +79,12 @@ if ($LASTEXITCODE -eq 0) {
         Write-Host ""
         Write-Host "✅ APK copied to releases folder!" -ForegroundColor Green
         Write-Host ""
+        
+        # Add APK to git staging
+        Write-Host "Adding APK to git staging..." -ForegroundColor Cyan
+        git add $releasesPath
+        Write-Host "✅ APK added to git staging!" -ForegroundColor Green
+        Write-Host ""
 
         # Also copy to build folder with new name
         Write-Host "Renaming APK in build folder to $newApkName..." -ForegroundColor Cyan

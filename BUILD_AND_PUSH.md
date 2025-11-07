@@ -10,6 +10,3 @@ git push
 
 scripts\build-apk.bat
 scripts\git-push.bat
-
-pubspec.yaml:
-version: 1.0.7+1

@@ -33,6 +33,11 @@ if ([string]::IsNullOrWhiteSpace($commitMessage)) {
 Write-Host ""
 Write-Host "Staging all changes..." -ForegroundColor Cyan
 git add -A
+# Force add APK files to ensure they're included
+if (Test-Path "releases\*.apk") {
+    git add releases\*.apk
+    Write-Host "Added APK files from releases folder" -ForegroundColor Cyan
+}
 
 # Commit
 Write-Host "Committing changes..." -ForegroundColor Cyan
