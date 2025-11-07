@@ -47,7 +47,7 @@ if ($LASTEXITCODE -eq 0) {
     Write-Host ""
     
     $apkPath = "build\app\outputs\flutter-apk\app-release.apk"
-    $newApkName = "MatrixTSL-v1.0.0.apk"
+    $newApkName = "SmartFactory-v1.0.0.apk"
     $newApkPath = "build\app\outputs\flutter-apk\$newApkName"
     
     if (Test-Path $apkPath) {

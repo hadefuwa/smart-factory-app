@@ -69,7 +69,7 @@ class _WebshopScreenState extends State<WebshopScreen> {
                 ],
               ).createShader(bounds),
               child: const Text(
-                'Matrix TSL Webshop',
+                'Smart Factory Webshop',
                 style: TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
@@ -161,7 +161,7 @@ class _WebshopScreenState extends State<WebshopScreen> {
                       ),
                       const SizedBox(height: 20),
                       Text(
-                        'Loading Matrix TSL Webshop...',
+                        'Loading Smart Factory Webshop...',
                         style: TextStyle(
                           color: Colors.white.withValues(alpha: 0.7),
                           fontSize: 16,

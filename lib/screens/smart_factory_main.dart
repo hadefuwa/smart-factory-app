@@ -4,6 +4,7 @@ import 'sf_run_screen.dart';
 import 'sf_io_screen.dart';
 import 'sf_worksheets_screen.dart';
 import 'sf_analytics_screen.dart';
+import '../widgets/app_drawer.dart';
 
 class SmartFactoryMain extends StatefulWidget {
   const SmartFactoryMain({super.key});
@@ -32,6 +33,7 @@ class _SmartFactoryMainState extends State<SmartFactoryMain> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      drawer: const AppDrawer(),
       body: _screens[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,

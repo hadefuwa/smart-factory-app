@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import '../models/simulator_state.dart';
 import '../services/simulator_service.dart';
+import '../widgets/app_drawer.dart';
 
 class SFAnalyticsScreen extends StatefulWidget {
   const SFAnalyticsScreen({super.key});
@@ -19,6 +20,7 @@ class _SFAnalyticsScreenState extends State<SFAnalyticsScreen> {
     final simulator = SimulatorService();
 
     return Scaffold(
+      drawer: const AppDrawer(),
       appBar: AppBar(
         title: const Text('Analytics'),
       ),

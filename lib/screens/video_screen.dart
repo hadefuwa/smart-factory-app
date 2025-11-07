@@ -192,7 +192,7 @@ class _VideoScreenState extends State<VideoScreen> {
                 ],
               ).createShader(bounds),
               child: const Text(
-                'Matrix TSL Video',
+                'Smart Factory Video',
                 style: TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,

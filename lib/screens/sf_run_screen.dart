@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/simulator_state.dart';
 import '../services/simulator_service.dart';
+import '../widgets/app_drawer.dart';
 
 class SFRunScreen extends StatelessWidget {
   const SFRunScreen({super.key});
@@ -10,6 +11,7 @@ class SFRunScreen extends StatelessWidget {
     final simulator = SimulatorService();
 
     return Scaffold(
+      drawer: const AppDrawer(),
       appBar: AppBar(
         title: const Text('Run Control'),
       ),

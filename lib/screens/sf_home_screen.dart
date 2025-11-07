@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/simulator_state.dart';
 import '../services/simulator_service.dart';
+import '../widgets/app_drawer.dart';
 
 class SFHomeScreen extends StatelessWidget {
   const SFHomeScreen({super.key});
@@ -11,6 +12,7 @@ class SFHomeScreen extends StatelessWidget {
     final purple = Theme.of(context).colorScheme.primary;
 
     return Scaffold(
+      drawer: const AppDrawer(),
       appBar: AppBar(
         title: const Text('Smart Factory'),
         actions: [

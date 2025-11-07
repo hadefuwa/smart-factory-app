@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/worksheet.dart';
+import '../widgets/app_drawer.dart';
 
 class SFWorksheetsScreen extends StatefulWidget {
   const SFWorksheetsScreen({super.key});
@@ -17,6 +18,7 @@ class _SFWorksheetsScreenState extends State<SFWorksheetsScreen> {
     final completionPercent = (_completedWorksheets.length / worksheets.length * 100).toInt();
 
     return Scaffold(
+      drawer: const AppDrawer(),
       appBar: AppBar(
         title: const Text('Worksheets'),
       ),

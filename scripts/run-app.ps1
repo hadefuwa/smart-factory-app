@@ -1,5 +1,5 @@
-# PowerShell script to run the Matrix TSL app on Android Emulator
-Write-Host "Starting Android Emulator and running Matrix TSL app..." -ForegroundColor Green
+# PowerShell script to run the Smart Factory app on Android Emulator
+Write-Host "Starting Android Emulator and running Smart Factory app..." -ForegroundColor Green
 Write-Host ""
 
 # Launch the Android emulator

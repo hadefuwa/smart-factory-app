@@ -185,7 +185,7 @@ class AboutScreen extends StatelessWidget {
                 // Footer
                 Center(
                   child: Text(
-                    '© 2025 Matrix TSL. All rights reserved.',
+                    '© 2025 Smart Factory. All rights reserved.',
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.5),
                       fontSize: 12,

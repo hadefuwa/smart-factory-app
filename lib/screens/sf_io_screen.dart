@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/simulator_state.dart';
 import '../services/simulator_service.dart';
+import '../widgets/app_drawer.dart';
 
 class SFIOScreen extends StatelessWidget {
   const SFIOScreen({super.key});
@@ -10,6 +11,7 @@ class SFIOScreen extends StatelessWidget {
     final simulator = SimulatorService();
 
     return Scaffold(
+      drawer: const AppDrawer(),
       appBar: AppBar(
         title: const Text('I/O Live'),
       ),

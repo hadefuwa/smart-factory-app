@@ -1,5 +1,5 @@
 @echo off
-echo Starting Android Emulator and running Matrix TSL app...
+echo Starting Android Emulator and running Smart Factory app...
 echo.
 
 REM Launch the Android emulator

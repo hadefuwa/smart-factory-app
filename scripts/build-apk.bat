@@ -43,7 +43,7 @@ if %ERRORLEVEL% EQU 0 (
     echo.
     
     set "APK_PATH=build\app\outputs\flutter-apk\app-release.apk"
-    set "NEW_APK_NAME=MatrixTSL-v1.0.0.apk"
+    set "NEW_APK_NAME=SmartFactory-v1.0.0.apk"
     set "NEW_APK_PATH=build\app\outputs\flutter-apk\%NEW_APK_NAME%"
     
     if exist "%APK_PATH%" (

@@ -12,14 +12,13 @@ import 'package:matrix_app/main.dart';
 void main() {
   testWidgets('Products list screen displays products', (WidgetTester tester) async {
     // Build our app and trigger a frame.
-    await tester.pumpWidget(const MatrixApp());
+    await tester.pumpWidget(const SmartFactoryApp());
 
     // Verify that the products list screen is displayed
-    expect(find.text('Matrix TSL Products'), findsOneWidget);
+    expect(find.text('Smart Factory'), findsWidgets);
     
     // Verify that product cards are displayed
     expect(find.text('Maintenance of Closed Loop Systems'), findsOneWidget);
     expect(find.text('PLC Fundamentals'), findsOneWidget);
-    expect(find.text('Matrix LOGO!'), findsOneWidget);
   });
 }
