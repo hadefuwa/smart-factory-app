@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/worksheet.dart';
+import '../services/progress_tracking_service.dart';
 
 class SFWorksheetsScreen extends StatefulWidget {
   const SFWorksheetsScreen({super.key});
@@ -10,6 +12,25 @@ class SFWorksheetsScreen extends StatefulWidget {
 
 class _SFWorksheetsScreenState extends State<SFWorksheetsScreen> {
   final Set<String> _completedWorksheets = {};
+  final ProgressTrackingService _progressService = ProgressTrackingService();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProgress();
+  }
+
+  Future<void> _loadProgress() async {
+    final progress = await _progressService.getCurrentProgress();
+    setState(() {
+      _completedWorksheets.clear();
+      for (final entry in progress.worksheetProgress.entries) {
+        if (entry.value.isCompleted) {
+          _completedWorksheets.add(entry.key);
+        }
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -67,14 +88,17 @@ class _SFWorksheetsScreenState extends State<SFWorksheetsScreen> {
                   worksheet: worksheet,
                   isCompleted: isCompleted,
                   onStart: () => _openWorksheet(context, worksheet),
-                  onToggleComplete: () {
-                    setState(() {
-                      if (isCompleted) {
+                  onToggleComplete: () async {
+                    if (isCompleted) {
+                      setState(() {
                         _completedWorksheets.remove(worksheet.id);
-                      } else {
+                      });
+                    } else {
+                      setState(() {
                         _completedWorksheets.add(worksheet.id);
-                      }
-                    });
+                      });
+                    }
+                    await _loadProgress();
                   },
                 );
               },
@@ -91,10 +115,11 @@ class _SFWorksheetsScreenState extends State<SFWorksheetsScreen> {
         builder: (context) => _WorksheetDetailScreen(
           worksheet: worksheet,
           isCompleted: _completedWorksheets.contains(worksheet.id),
-          onComplete: () {
+          onComplete: () async {
             setState(() {
               _completedWorksheets.add(worksheet.id);
             });
+            await _loadProgress();
           },
         ),
       ),
@@ -217,6 +242,48 @@ class _WorksheetDetailScreen extends StatefulWidget {
 
 class _WorksheetDetailScreenState extends State<_WorksheetDetailScreen> {
   final Set<int> _checkedSteps = {};
+  final ProgressTrackingService _progressService = ProgressTrackingService();
+  DateTime? _startTime;
+  Timer? _timeTracker;
+
+  @override
+  void initState() {
+    super.initState();
+    _startWorksheet();
+    _loadProgress();
+  }
+
+  Future<void> _startWorksheet() async {
+    _startTime = DateTime.now();
+    await _progressService.startWorksheet(
+      widget.worksheet.id,
+      widget.worksheet.steps.length,
+    );
+
+    // Track time every minute
+    _timeTracker = Timer.periodic(const Duration(minutes: 1), (timer) async {
+      await _progressService.updateTimeSpent(const Duration(minutes: 1));
+    });
+  }
+
+  Future<void> _loadProgress() async {
+    final progress = await _progressService.getCurrentProgress();
+    final wp = progress.worksheetProgress[widget.worksheet.id];
+    if (wp != null) {
+      setState(() {
+        _checkedSteps.clear();
+        for (int i = 0; i < wp.stepsCompleted; i++) {
+          _checkedSteps.add(i);
+        }
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _timeTracker?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -272,7 +339,7 @@ class _WorksheetDetailScreenState extends State<_WorksheetDetailScreen> {
 
               return CheckboxListTile(
                 value: isChecked,
-                onChanged: (value) {
+                onChanged: (value) async {
                   setState(() {
                     if (value == true) {
                       _checkedSteps.add(index);
@@ -280,6 +347,10 @@ class _WorksheetDetailScreenState extends State<_WorksheetDetailScreen> {
                       _checkedSteps.remove(index);
                     }
                   });
+                  await _progressService.updateWorksheetProgress(
+                    widget.worksheet.id,
+                    _checkedSteps.length,
+                  );
                 },
                 title: Text(step),
                 controlAffinity: ListTileControlAffinity.leading,
@@ -289,15 +360,24 @@ class _WorksheetDetailScreenState extends State<_WorksheetDetailScreen> {
             if (!widget.isCompleted)
               ElevatedButton.icon(
                 onPressed: allChecked
-                    ? () {
-                        widget.onComplete();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Worksheet marked as complete!'),
-                            backgroundColor: Colors.green,
-                          ),
+                    ? () async {
+                        final timeSpent = _startTime != null
+                            ? DateTime.now().difference(_startTime!)
+                            : Duration.zero;
+                        await _progressService.completeWorksheet(
+                          widget.worksheet.id,
+                          timeSpent,
                         );
-                        Navigator.pop(context);
+                        widget.onComplete();
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Worksheet marked as complete!'),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
+                          Navigator.pop(context);
+                        }
                       }
                     : null,
                 icon: const Icon(Icons.check_circle),

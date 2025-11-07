@@ -77,6 +77,13 @@ class SFIOScreen extends StatelessWidget {
                     ),
                   ),
                 ],
+                const SizedBox(height: 32),
+                const Text(
+                  'PLC IO Table',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 16),
+                _PLCIOTable(state: state, simulator: simulator),
               ],
             ),
           );
@@ -311,6 +318,409 @@ class _IOTile extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _PLCIOTable extends StatelessWidget {
+  final SimulatorState state;
+  final SimulatorService simulator;
+
+  const _PLCIOTable({required this.state, required this.simulator});
+
+  @override
+  Widget build(BuildContext context) {
+    final purple = Theme.of(context).colorScheme.primary;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A1A2E),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: purple.withValues(alpha: 0.3),
+          width: 1.5,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Inputs Section
+          _buildSectionHeader('Inputs (I)', Colors.blue, Icons.arrow_downward, isFirst: true),
+          _buildTableHeader(['Address', 'Description', 'Status', 'Force']),
+          _buildTableRow('I0.0', 'First Gate', state.firstGate, true, 'I0.0'),
+          _buildTableRow('I0.1', 'Inductive Sensor', state.inductive, true, 'I0.1'),
+          _buildTableRow('I0.2', 'Capacitive Sensor', state.capacitive, true, 'I0.2'),
+          _buildTableRow('I0.3', 'Photo Gate', state.photoGate, true, 'I0.3'),
+          _buildTableRow('I0.4', 'E-Stop', state.eStop, true, 'I0.4'),
+          _buildTableRow('I0.5', 'Gantry Home', state.gantryHome, true, 'I0.5'),
+          const SizedBox(height: 8),
+          const Divider(color: Color(0xFF2A2A3E), height: 1),
+          const SizedBox(height: 8),
+          // Outputs Section
+          _buildSectionHeader('Outputs (Q)', Colors.green, Icons.arrow_upward),
+          _buildTableHeader(['Address', 'Description', 'Status', 'Force']),
+          _buildTableRow('Q0.0', 'Conveyor', state.conveyor, false, 'Q0.0'),
+          _buildTableRow('Q0.1', 'Paddle Steel', state.paddleSteel, false, 'Q0.1'),
+          _buildTableRow('Q0.2', 'Paddle Aluminium', state.paddleAluminium, false, 'Q0.2'),
+          _buildTableRow('Q0.3', 'Plunger Down', state.plungerDown, false, 'Q0.3'),
+          _buildTableRow('Q0.4', 'Vacuum', state.vacuum, false, 'Q0.4'),
+          _buildTableRow('Q0.5', 'Gantry Step', state.gantryStep, false, 'Q0.5'),
+          const SizedBox(height: 8),
+          const Divider(color: Color(0xFF2A2A3E), height: 1),
+          const SizedBox(height: 8),
+          // Memory Bits Section
+          _buildSectionHeader('Memory Bits (M)', Colors.orange, Icons.storage),
+          _buildTableHeader(['Address', 'Description', 'Status', '']),
+          _buildMemoryRow('M0.0', 'System Running', state.isRunning),
+          _buildMemoryRow('M0.1', 'System Fault', state.activeFault != FaultType.none),
+          _buildMemoryRow('M0.2', 'E-Stop Active', state.activeFault == FaultType.eStop),
+          _buildMemoryRow('M0.3', 'Sensor Fault', state.activeFault == FaultType.sensorStuck),
+          _buildMemoryRow('M0.4', 'Paddle Jam', state.activeFault == FaultType.paddleJam),
+          _buildMemoryRow('M0.5', 'Vacuum Leak', state.activeFault == FaultType.vacuumLeak),
+          const SizedBox(height: 16),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title, Color color, IconData icon, {bool isFirst = false}) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: isFirst
+            ? const BorderRadius.only(
+                topLeft: Radius.circular(16),
+                topRight: Radius.circular(16),
+              )
+            : null,
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 20),
+          const SizedBox(width: 8),
+          Text(
+            title,
+            style: TextStyle(
+              color: color,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTableHeader(List<String> headers) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.2),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            flex: 2,
+            child: Text(
+              headers[0],
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+                color: Colors.white70,
+              ),
+            ),
+          ),
+          Expanded(
+            flex: 3,
+            child: Text(
+              headers[1],
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+                color: Colors.white70,
+              ),
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: Text(
+              headers[2],
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+                color: Colors.white70,
+              ),
+            ),
+          ),
+          Expanded(
+            flex: 4,
+            child: Text(
+              headers[3],
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+                color: Colors.white70,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTableRow(String address, String description, bool status, bool isInput, String ioAddress) {
+    final isForced = simulator.isForced(ioAddress) != null;
+    
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: Colors.white.withValues(alpha: 0.05),
+            width: 1,
+          ),
+        ),
+        color: isForced ? Colors.orange.withValues(alpha: 0.1) : null,
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            flex: 2,
+            child: Row(
+              children: [
+                Text(
+                  address,
+                  style: TextStyle(
+                    fontFamily: 'monospace',
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white.withValues(alpha: 0.9),
+                  ),
+                ),
+                if (isForced) ...[
+                  const SizedBox(width: 4),
+                  Icon(
+                    Icons.flag,
+                    size: 12,
+                    color: Colors.orange,
+                  ),
+                ],
+              ],
+            ),
+          ),
+          Expanded(
+            flex: 3,
+            child: Text(
+              description,
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.white.withValues(alpha: 0.8),
+              ),
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 10,
+                  height: 10,
+                  decoration: BoxDecoration(
+                    color: status ? Colors.green : Colors.grey,
+                    shape: BoxShape.circle,
+                    boxShadow: status
+                        ? [
+                            BoxShadow(
+                              color: Colors.green.withValues(alpha: 0.6),
+                              blurRadius: 4,
+                              spreadRadius: 1,
+                            )
+                          ]
+                        : null,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  status ? 'ON' : 'OFF',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: status ? Colors.green : Colors.grey,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            flex: 4,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SizedBox(
+                  height: 28,
+                  child: OutlinedButton(
+                    onPressed: () {
+                      if (isInput) {
+                        simulator.forceInput(ioAddress, true);
+                      } else {
+                        if (simulator.currentState.activeFault != FaultType.eStop) {
+                          simulator.forceOutput(ioAddress, true);
+                        }
+                      }
+                    },
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      minimumSize: const Size(0, 28),
+                      side: BorderSide(color: Colors.green.withValues(alpha: 0.5)),
+                      foregroundColor: Colors.green,
+                    ),
+                    child: const Text(
+                      'ON',
+                      style: TextStyle(fontSize: 10),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                SizedBox(
+                  height: 28,
+                  child: OutlinedButton(
+                    onPressed: () {
+                      if (isInput) {
+                        simulator.forceInput(ioAddress, false);
+                      } else {
+                        if (simulator.currentState.activeFault != FaultType.eStop) {
+                          simulator.forceOutput(ioAddress, false);
+                        }
+                      }
+                    },
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      minimumSize: const Size(0, 28),
+                      side: BorderSide(color: Colors.red.withValues(alpha: 0.5)),
+                      foregroundColor: Colors.red,
+                    ),
+                    child: const Text(
+                      'OFF',
+                      style: TextStyle(fontSize: 10),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                SizedBox(
+                  height: 28,
+                  child: OutlinedButton(
+                    onPressed: isForced
+                        ? () {
+                            if (isInput) {
+                              simulator.clearInputForce(ioAddress);
+                            } else {
+                              simulator.clearOutputForce(ioAddress);
+                            }
+                          }
+                        : null,
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      minimumSize: const Size(0, 28),
+                      side: BorderSide(
+                        color: isForced
+                            ? Colors.orange.withValues(alpha: 0.5)
+                            : Colors.grey.withValues(alpha: 0.2),
+                      ),
+                      foregroundColor: isForced ? Colors.orange : Colors.grey,
+                    ),
+                    child: const Text(
+                      'Clear',
+                      style: TextStyle(fontSize: 10),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMemoryRow(String address, String description, bool status) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: Colors.white.withValues(alpha: 0.05),
+            width: 1,
+          ),
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            flex: 2,
+            child: Text(
+              address,
+              style: TextStyle(
+                fontFamily: 'monospace',
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: Colors.white.withValues(alpha: 0.9),
+              ),
+            ),
+          ),
+          Expanded(
+            flex: 3,
+            child: Text(
+              description,
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.white.withValues(alpha: 0.8),
+              ),
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 10,
+                  height: 10,
+                  decoration: BoxDecoration(
+                    color: status ? Colors.green : Colors.grey,
+                    shape: BoxShape.circle,
+                    boxShadow: status
+                        ? [
+                            BoxShadow(
+                              color: Colors.green.withValues(alpha: 0.6),
+                              blurRadius: 4,
+                              spreadRadius: 1,
+                            )
+                          ]
+                        : null,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  status ? 'ON' : 'OFF',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: status ? Colors.green : Colors.grey,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Expanded(
+            flex: 4,
+            child: SizedBox(),
+          ),
+        ],
       ),
     );
   }

@@ -3,6 +3,12 @@ import '../screens/about_screen.dart';
 import '../screens/contact_screen.dart';
 import '../screens/model_3d_viewer_screen.dart';
 import '../screens/sf_data_stream_log_screen.dart';
+import '../screens/sf_event_log_screen.dart';
+import '../screens/sf_alarms_screen.dart';
+import '../screens/sf_factory_visualization_screen.dart';
+import '../screens/sf_progress_dashboard_screen.dart';
+import '../screens/sf_teacher_dashboard_screen.dart';
+import '../screens/further_learning_screen.dart';
 import 'logo_widget.dart';
 
 class AppDrawer extends StatelessWidget {
@@ -114,6 +120,62 @@ class AppDrawer extends StatelessWidget {
                   ),
                   _buildDrawerItem(
                     context,
+                    icon: Icons.animation,
+                    title: 'Factory Visualization',
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const SFFactoryVisualizationScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  _buildDrawerItem(
+                    context,
+                    icon: Icons.school,
+                    title: 'Further Learning',
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const FurtherLearningScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  _buildDrawerItem(
+                    context,
+                    icon: Icons.assessment,
+                    title: 'My Progress',
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const SFProgressDashboardScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  _buildDrawerItem(
+                    context,
+                    icon: Icons.dashboard,
+                    title: 'Teacher Dashboard',
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const SFTeacherDashboardScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  _buildDrawerItem(
+                    context,
                     icon: Icons.info_outline,
                     title: 'About',
                     onTap: () {
@@ -150,6 +212,34 @@ class AppDrawer extends StatelessWidget {
                         context,
                         MaterialPageRoute(
                           builder: (context) => const DataStreamLogScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  _buildDrawerItem(
+                    context,
+                    icon: Icons.event_note,
+                    title: 'Event Log',
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const SFEventLogScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  _buildDrawerItem(
+                    context,
+                    icon: Icons.warning,
+                    title: 'Alarms',
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const SFAlarmsScreen(),
                         ),
                       );
                     },

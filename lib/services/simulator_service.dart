@@ -30,9 +30,15 @@ class SimulatorService {
   final List<EventLogEntry> _eventLog = [];
   BatchRecord? _currentBatch;
 
+  // Fault history tracking
+  final List<FaultRecord> _faultHistory = [];
+
   // Virtual parts on conveyor
   final List<_VirtualPart> _parts = [];
   int _nextPartId = 0;
+
+  // Force tracking for inputs and outputs
+  final Map<String, bool?> _forcedIO = {}; // null = not forced, true/false = forced value
 
   SimulatorState get currentState => _state;
 
@@ -111,6 +117,19 @@ class SimulatorService {
   void resetFaults() {
     if (_state.activeFault == FaultType.none) return;
 
+    // Mark current fault as cleared in history
+    if (_faultHistory.isNotEmpty) {
+      final lastFault = _faultHistory.last;
+      if (lastFault.faultType == _state.activeFault && !lastFault.cleared) {
+        _faultHistory[_faultHistory.length - 1] = FaultRecord(
+          faultType: lastFault.faultType,
+          timestamp: lastFault.timestamp,
+          cleared: true,
+          clearedAt: DateTime.now(),
+        );
+      }
+    }
+
     _state = _state.copyWith(
       activeFault: FaultType.none,
       systemState: SystemState.stopped,
@@ -122,6 +141,13 @@ class SimulatorService {
 
   void injectFault(FaultType fault) {
     if (fault == FaultType.none) return;
+
+    // Record fault in history
+    _faultHistory.add(FaultRecord(
+      faultType: fault,
+      timestamp: DateTime.now(),
+      cleared: false,
+    ));
 
     _state = _state.copyWith(
       activeFault: fault,
@@ -197,6 +223,88 @@ class SimulatorService {
     _state = _state.copyWith(vacuum: on);
     _logEvent('Vacuum', on.toString(), 'output');
     _stateController.add(_state);
+  }
+
+  // Force input methods
+  void forceInput(String address, bool value) {
+    _forcedIO[address] = value;
+    _applyForcedInput(address, value);
+    _logEvent('Force Input $address', value.toString(), 'force');
+    _stateController.add(_state);
+  }
+
+  void clearInputForce(String address) {
+    _forcedIO.remove(address);
+    _logEvent('Clear Force Input $address', '', 'force');
+    _stateController.add(_state);
+  }
+
+  // Force output methods
+  void forceOutput(String address, bool value) {
+    if (!_canActivateOutput()) return;
+    _forcedIO[address] = value;
+    _applyForcedOutput(address, value);
+    _logEvent('Force Output $address', value.toString(), 'force');
+    _stateController.add(_state);
+  }
+
+  void clearOutputForce(String address) {
+    _forcedIO.remove(address);
+    _logEvent('Clear Force Output $address', '', 'force');
+    _stateController.add(_state);
+  }
+
+  // Check if an IO is forced
+  bool? isForced(String address) {
+    return _forcedIO[address];
+  }
+
+  // Apply forced input value
+  void _applyForcedInput(String address, bool value) {
+    switch (address) {
+      case 'I0.0':
+        _state = _state.copyWith(firstGate: value);
+        break;
+      case 'I0.1':
+        _state = _state.copyWith(inductive: value);
+        break;
+      case 'I0.2':
+        _state = _state.copyWith(capacitive: value);
+        break;
+      case 'I0.3':
+        _state = _state.copyWith(photoGate: value);
+        break;
+      case 'I0.4':
+        _state = _state.copyWith(eStop: value);
+        break;
+      case 'I0.5':
+        _state = _state.copyWith(gantryHome: value);
+        break;
+    }
+  }
+
+  // Apply forced output value
+  void _applyForcedOutput(String address, bool value) {
+    switch (address) {
+      case 'Q0.0':
+        _state = _state.copyWith(conveyor: value);
+        break;
+      case 'Q0.1':
+        _state = _state.copyWith(paddleSteel: value);
+        break;
+      case 'Q0.2':
+        _state = _state.copyWith(paddleAluminium: value);
+        break;
+      case 'Q0.3':
+        _state = _state.copyWith(plungerDown: value);
+        break;
+      case 'Q0.4':
+        _state = _state.copyWith(vacuum: value);
+        break;
+      case 'Q0.5':
+        _state = _state.copyWith(gantryStep: value);
+        break;
+    }
   }
 
   bool _canActivateOutput() {
@@ -316,31 +424,39 @@ class SimulatorService {
       }
     }
 
-    // Update sensor states
+    // Update sensor states (only if not forced)
     bool sensorsChanged = false;
-    if (_state.firstGate != firstGate) {
+    if (!_forcedIO.containsKey('I0.0') && _state.firstGate != firstGate) {
       _logEvent('First Gate', firstGate.toString(), 'input');
       sensorsChanged = true;
     }
-    if (_state.inductive != inductive) {
+    if (!_forcedIO.containsKey('I0.1') && _state.inductive != inductive) {
       _logEvent('Inductive', inductive.toString(), 'input');
       sensorsChanged = true;
     }
-    if (_state.capacitive != capacitive) {
+    if (!_forcedIO.containsKey('I0.2') && _state.capacitive != capacitive) {
       _logEvent('Capacitive', capacitive.toString(), 'input');
       sensorsChanged = true;
     }
-    if (_state.photoGate != photoGate) {
+    if (!_forcedIO.containsKey('I0.3') && _state.photoGate != photoGate) {
       _logEvent('Photo Gate', photoGate.toString(), 'input');
       sensorsChanged = true;
     }
 
     if (sensorsChanged || _state.activeFault == FaultType.sensorStuck) {
       _state = _state.copyWith(
-        firstGate: _state.activeFault == FaultType.sensorStuck ? true : firstGate,
-        inductive: _state.activeFault == FaultType.sensorStuck ? _state.inductive : inductive,
-        capacitive: _state.activeFault == FaultType.sensorStuck ? _state.capacitive : capacitive,
-        photoGate: photoGate,
+        firstGate: _forcedIO.containsKey('I0.0') 
+            ? _forcedIO['I0.0']! 
+            : (_state.activeFault == FaultType.sensorStuck ? true : firstGate),
+        inductive: _forcedIO.containsKey('I0.1')
+            ? _forcedIO['I0.1']!
+            : (_state.activeFault == FaultType.sensorStuck ? _state.inductive : inductive),
+        capacitive: _forcedIO.containsKey('I0.2')
+            ? _forcedIO['I0.2']!
+            : (_state.activeFault == FaultType.sensorStuck ? _state.capacitive : capacitive),
+        photoGate: _forcedIO.containsKey('I0.3')
+            ? _forcedIO['I0.3']!
+            : photoGate,
       );
     }
 
@@ -448,10 +564,69 @@ class SimulatorService {
     return _eventLog.where((e) => e.timestamp.isAfter(cutoff)).toList();
   }
 
+  // Get active fault
+  FaultType get activeFault => _state.activeFault;
+
+  // Get fault history
+  List<FaultRecord> getFaultHistory() {
+    return List.unmodifiable(_faultHistory);
+  }
+
+  // Clear fault history
+  void clearFaultHistory() {
+    _faultHistory.clear();
+  }
+
+  // Get parts for visualization
+  List<PartInfo> getParts() {
+    return _parts.map((part) => PartInfo(
+      id: part.id,
+      material: part.material,
+      position: part.position,
+      detectedAtFirstGate: part.detectedAtFirstGate,
+      sorted: part.sorted,
+      counted: part.counted,
+    )).toList();
+  }
+
   void dispose() {
     _simulationTimer?.cancel();
     _stateController.close();
   }
+}
+
+// Public part info model for visualization
+class PartInfo {
+  final int id;
+  final PartMaterial material;
+  final double position;
+  final bool detectedAtFirstGate;
+  final bool sorted;
+  final bool counted;
+
+  PartInfo({
+    required this.id,
+    required this.material,
+    required this.position,
+    required this.detectedAtFirstGate,
+    required this.sorted,
+    required this.counted,
+  });
+}
+
+// Fault record model
+class FaultRecord {
+  final FaultType faultType;
+  final DateTime timestamp;
+  final bool cleared;
+  final DateTime? clearedAt;
+
+  FaultRecord({
+    required this.faultType,
+    required this.timestamp,
+    required this.cleared,
+    this.clearedAt,
+  });
 }
 
 class _VirtualPart {
