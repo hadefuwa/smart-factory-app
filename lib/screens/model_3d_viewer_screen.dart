@@ -17,8 +17,6 @@ class _Model3DViewerScreenState extends State<Model3DViewerScreen> {
   
   final Map<String, String> _models = {
     '3d model.glb': 'Smart Factory',
-    'IM0004.glb': 'Maintenance of Closed Loop Systems',
-    'IM6930.glb': 'PLC Fundamentals',
   };
 
   @override
@@ -295,49 +293,51 @@ class _Model3DViewerScreenState extends State<Model3DViewerScreen> {
         backgroundColor: const Color(0xFF0F0F1E),
         foregroundColor: const Color(0xFFE0B0FF),
         actions: [
-          PopupMenuButton<String>(
-            icon: Icon(Icons.model_training, color: purple),
-            tooltip: 'Select Model',
-            onSelected: _changeModel,
-            itemBuilder: (context) => _models.entries.map((entry) {
-              return PopupMenuItem(
-                value: entry.key,
-                child: Row(
-                  children: [
-                    Icon(
-                      _selectedModel == entry.key
-                          ? Icons.radio_button_checked
-                          : Icons.radio_button_unchecked,
-                      color: purple,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            entry.value,
-                            style: TextStyle(
-                              fontWeight: _selectedModel == entry.key
-                                  ? FontWeight.bold
-                                  : FontWeight.normal,
-                            ),
-                          ),
-                          Text(
-                            entry.key,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                        ],
+          // Only show model selector if there are multiple models
+          if (_models.length > 1)
+            PopupMenuButton<String>(
+              icon: Icon(Icons.model_training, color: purple),
+              tooltip: 'Select Model',
+              onSelected: _changeModel,
+              itemBuilder: (context) => _models.entries.map((entry) {
+                return PopupMenuItem(
+                  value: entry.key,
+                  child: Row(
+                    children: [
+                      Icon(
+                        _selectedModel == entry.key
+                            ? Icons.radio_button_checked
+                            : Icons.radio_button_unchecked,
+                        color: purple,
                       ),
-                    ),
-                  ],
-                ),
-              );
-            }).toList(),
-          ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              entry.value,
+                              style: TextStyle(
+                                fontWeight: _selectedModel == entry.key
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
+                              ),
+                            ),
+                            Text(
+                              entry.key,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
           IconButton(
             icon: Icon(Icons.refresh, color: purple),
             onPressed: () {

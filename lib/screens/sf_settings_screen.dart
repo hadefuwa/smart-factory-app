@@ -582,7 +582,7 @@ class _SFSettingsScreenState extends State<SFSettingsScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Version 1.0.6',
+                    'Version 1.0.7',
                     style: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
                   ),
                   const SizedBox(height: 16),

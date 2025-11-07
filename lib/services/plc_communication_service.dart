@@ -110,22 +110,22 @@ class PLCCommunicationService {
 
     try {
       final currentTime = DateTime.now();
-      
+
       // Don't attempt connection too frequently
       if (_lastConnectionAttempt != null &&
           currentTime.difference(_lastConnectionAttempt!) < _connectionAttemptInterval) {
         return _isConnected;
       }
-      
+
       _lastConnectionAttempt = currentTime;
-      
+
       // Check if already connected
       if (_isConnected && _socket != null) {
         return true;
       }
-      
+
       _logDataStream('TX', 'CONNECTION', 'CONNECT', 'Connecting to S7-1200 at $_plcIpAddress (Rack: $_rack, Slot: $_slot)...');
-      
+
       // Try to connect with retries
       for (int attempt = 0; attempt < _maxRetries; attempt++) {
         try {
@@ -140,24 +140,50 @@ class PLCCommunicationService {
             onTimeout: () => throw TimeoutException('Connection timeout'),
           );
 
-          // S7 Connection Request (ISO Connection)
-          final connectionRequest = _buildS7ConnectionRequest();
-          _socket!.add(connectionRequest);
+          // Phase 1: ISO-COTP Connection Request
+          final cotpConnectionRequest = _buildCOTPConnectionRequest();
+          _socket!.add(cotpConnectionRequest);
           await _socket!.flush();
-          
-          _logDataStream('TX', 'S7', 'CONNECTION_REQUEST', 'Sent S7 connection request (attempt ${attempt + 1}/$_maxRetries)');
 
-          // Wait for response
-          final response = await _socket!.first.timeout(
+          _logDataStream('TX', 'COTP', 'CONNECTION_REQUEST', 'Sent COTP connection request (attempt ${attempt + 1}/$_maxRetries)');
+
+          // Wait for COTP Connection Confirm
+          final cotpResponse = await _socket!.first.timeout(
             const Duration(seconds: 5),
-            onTimeout: () => throw TimeoutException('Response timeout'),
+            onTimeout: () => throw TimeoutException('COTP response timeout'),
           );
 
-          if (_parseS7ConnectionResponse(response)) {
+          if (!_parseCOTPConnectionConfirm(cotpResponse)) {
+            _lastError = 'Invalid COTP connection confirm';
+            _logDataStream('RX', 'ERROR', 'COTP_FAILED', 'Invalid COTP connection confirm (attempt ${attempt + 1}/$_maxRetries)');
+            _socket?.close();
+            _socket = null;
+            if (attempt < _maxRetries - 1) {
+              await Future.delayed(_retryDelay);
+            }
+            continue;
+          }
+
+          _logDataStream('RX', 'COTP', 'CONNECTION_CONFIRM', 'COTP connection established');
+
+          // Phase 2: S7 Communication Setup
+          final s7SetupRequest = _buildS7SetupCommunication();
+          _socket!.add(s7SetupRequest);
+          await _socket!.flush();
+
+          _logDataStream('TX', 'S7', 'SETUP_COMMUNICATION', 'Sent S7 communication setup');
+
+          // Wait for S7 Setup response
+          final s7Response = await _socket!.first.timeout(
+            const Duration(seconds: 5),
+            onTimeout: () => throw TimeoutException('S7 setup response timeout'),
+          );
+
+          if (_parseS7SetupResponse(s7Response)) {
             _isConnected = true;
             _lastError = '';
             _logDataStream('RX', 'CONNECTION', 'CONNECTED', 'Successfully connected to S7-1200');
-            
+
             // Set up data listener
             _socket!.listen(
               (data) {
@@ -178,8 +204,8 @@ class PLCCommunicationService {
             _startPeriodicStatusCheck();
             return true;
           } else {
-            _lastError = 'Invalid S7 connection response';
-            _logDataStream('RX', 'ERROR', 'CONNECTION_FAILED', 'Invalid S7 connection response (attempt ${attempt + 1}/$_maxRetries)');
+            _lastError = 'Invalid S7 setup response';
+            _logDataStream('RX', 'ERROR', 'S7_SETUP_FAILED', 'Invalid S7 setup response (attempt ${attempt + 1}/$_maxRetries)');
             _socket?.close();
             _socket = null;
           }
@@ -189,13 +215,13 @@ class PLCCommunicationService {
           _socket?.close();
           _socket = null;
         }
-        
+
         // Wait before retry
         if (attempt < _maxRetries - 1) {
           await Future.delayed(_retryDelay);
         }
       }
-      
+
       _isConnected = false;
       return false;
     } catch (e) {
@@ -208,55 +234,113 @@ class PLCCommunicationService {
     }
   }
 
-  // Build S7 ISO Connection Request
-  Uint8List _buildS7ConnectionRequest() {
-    // ISO TPKT Header
+  // Build COTP Connection Request (Phase 1)
+  Uint8List _buildCOTPConnectionRequest() {
+    // ISO TPKT Header (4 bytes)
     final tpkt = Uint8List(4);
     tpkt[0] = 0x03; // Version
     tpkt[1] = 0x00; // Reserved
-    tpkt[2] = 0x00; // Length high byte (will be set)
-    tpkt[3] = 0x16; // Length low byte (22 bytes)
+    tpkt[2] = 0x00; // Length high byte
+    tpkt[3] = 0x16; // Length low byte (22 bytes total)
 
-    // ISO COTP Header
-    final cotp = Uint8List(7);
-    cotp[0] = 0x11; // Length
-    cotp[1] = 0xE0; // PDU Type: Connection Request
+    // ISO COTP Connection Request (18 bytes)
+    final cotp = Uint8List(18);
+    cotp[0] = 0x11; // Length indicator (17 bytes following)
+    cotp[1] = 0xE0; // PDU Type: Connection Request (CR)
     cotp[2] = 0x00; // Destination reference high
     cotp[3] = 0x00; // Destination reference low
     cotp[4] = 0x00; // Source reference high
     cotp[5] = 0x01; // Source reference low
-    cotp[6] = 0x00; // Class/Options
+    cotp[6] = 0x00; // Class/Options (Class 0)
 
-    // S7 Communication Setup
-    final s7Setup = Uint8List(11);
-    s7Setup[0] = 0x02; // Function: Setup communication
-    s7Setup[1] = 0xF0; // Reserved
-    s7Setup[2] = 0x80; // Reserved
-    s7Setup[3] = 0x32; // Max PDU length high (1024 bytes)
-    s7Setup[4] = 0x01; // Max PDU length low
-    s7Setup[5] = 0x00; // Max parallel jobs
-    s7Setup[6] = 0x01; // Max parallel jobs
-    s7Setup[7] = 0x01; // Max parallel jobs
-    s7Setup[8] = 0x01; // Max parallel jobs
-    s7Setup[9] = _rack; // Rack
-    s7Setup[10] = _slot; // Slot
+    // Parameter: TPDU Size (3 bytes)
+    cotp[7] = 0xC0;  // Parameter code: TPDU size
+    cotp[8] = 0x01;  // Parameter length
+    cotp[9] = 0x0A;  // TPDU size: 2^10 = 1024 bytes
+
+    // Parameter: Source TSAP (5 bytes)
+    cotp[10] = 0xC1; // Parameter code: Source TSAP
+    cotp[11] = 0x02; // Parameter length
+    cotp[12] = 0x01; // Source TSAP high (local)
+    cotp[13] = 0x00; // Source TSAP low
+
+    // Parameter: Destination TSAP (5 bytes)
+    cotp[14] = 0xC2; // Parameter code: Destination TSAP
+    cotp[15] = 0x02; // Parameter length
+    cotp[16] = 0x01; // Rack/Slot calculation: (1 * 2) + (rack * 0x20) + slot
+    cotp[17] = (_rack * 0x20) + _slot; // Rack and Slot encoded
+
+    return Uint8List.fromList([...tpkt, ...cotp]);
+  }
+
+  // Parse COTP Connection Confirm (Phase 1 Response)
+  bool _parseCOTPConnectionConfirm(List<int> data) {
+    if (data.length < 11) return false;
+
+    // Check TPKT header
+    if (data[0] != 0x03 || data[1] != 0x00) return false;
+
+    // Check COTP header - 0xD0 is Connection Confirm (CC)
+    if (data[5] != 0xD0) return false;
+
+    return true;
+  }
+
+  // Build S7 Communication Setup (Phase 2)
+  Uint8List _buildS7SetupCommunication() {
+    // ISO TPKT Header (4 bytes)
+    final tpkt = Uint8List(4);
+    tpkt[0] = 0x03; // Version
+    tpkt[1] = 0x00; // Reserved
+    tpkt[2] = 0x00; // Length high byte
+    tpkt[3] = 0x19; // Length low byte (25 bytes total)
+
+    // ISO COTP Data Header (3 bytes)
+    final cotp = Uint8List(3);
+    cotp[0] = 0x02; // Length indicator
+    cotp[1] = 0xF0; // PDU Type: Data (DT)
+    cotp[2] = 0x80; // TPDU number + EOT
+
+    // S7 Communication Setup (18 bytes)
+    final s7Setup = Uint8List(18);
+    s7Setup[0] = 0x32;  // Protocol ID (S7)
+    s7Setup[1] = 0x01;  // ROSCTR: Job (request)
+    s7Setup[2] = 0x00;  // Redundancy ID high
+    s7Setup[3] = 0x00;  // Redundancy ID low
+    s7Setup[4] = 0x00;  // PDU reference high
+    s7Setup[5] = 0x00;  // PDU reference low
+    s7Setup[6] = 0x00;  // Parameter length high
+    s7Setup[7] = 0x08;  // Parameter length low (8 bytes)
+    s7Setup[8] = 0x00;  // Data length high
+    s7Setup[9] = 0x00;  // Data length low
+
+    // Parameter: Function Setup Communication
+    s7Setup[10] = 0xF0; // Function: Setup communication
+    s7Setup[11] = 0x00; // Reserved
+    s7Setup[12] = 0x00; // Max AMQ (parallel jobs) Calling high
+    s7Setup[13] = 0x01; // Max AMQ (parallel jobs) Calling low
+    s7Setup[14] = 0x00; // Max AMQ (parallel jobs) Called high
+    s7Setup[15] = 0x01; // Max AMQ (parallel jobs) Called low
+    s7Setup[16] = 0x03; // PDU length high (960 bytes = 0x03C0)
+    s7Setup[17] = 0xC0; // PDU length low
 
     return Uint8List.fromList([...tpkt, ...cotp, ...s7Setup]);
   }
 
-  // Parse S7 Connection Response
-  bool _parseS7ConnectionResponse(List<int> data) {
-    if (data.length < 27) return false;
-    
+  // Parse S7 Communication Setup Response (Phase 2 Response)
+  bool _parseS7SetupResponse(List<int> data) {
+    if (data.length < 20) return false;
+
     // Check TPKT header
     if (data[0] != 0x03 || data[1] != 0x00) return false;
-    
-    // Check COTP header
-    if (data[4] != 0x11 || data[5] != 0xD0) return false; // Connection confirm
-    
-    // Check S7 response
-    if (data[17] != 0x03 || data[18] != 0x00) return false; // Setup communication response
-    
+
+    // Check COTP Data header
+    if (data[5] != 0xF0) return false;
+
+    // Check S7 header
+    if (data[7] != 0x32) return false; // Protocol ID
+    if (data[8] != 0x03) return false; // ROSCTR: Ack_Data (response)
+
     return true;
   }
 

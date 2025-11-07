@@ -25,7 +25,10 @@
       "Bash(\"/c/Users/Hamed/Documents/flutter/bin/flutter.bat\" pub run flutter_launcher_icons)",
       "Bash(identify:*)",
       "Bash(cmd.exe /c scripts\\build-apk.bat)",
-      "Bash(\"/c/Users/Hamed/Documents/flutter/bin/flutter.bat\" analyze --no-pub)"
+      "Bash(\"/c/Users/Hamed/Documents/flutter/bin/flutter.bat\" analyze --no-pub)",
+      "Bash(ping:*)",
+      "Bash(powershell -Command:*)",
+      "Bash(cmd.exe /c scriptsbuild-apk.bat)"
     ],
     "deny": [],
     "ask": []
