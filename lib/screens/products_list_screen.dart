@@ -389,13 +389,13 @@ class _ProductsListScreenState extends State<ProductsListScreen>
             // Footer
             Padding(
               padding: const EdgeInsets.all(16),
-              child: Text(
-                'Version 1.0.0',
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.5),
-                  fontSize: 12,
-                ),
-              ),
+              child:                   Text(
+                    'Version 1.0.3',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.5),
+                      fontSize: 12,
+                    ),
+                  ),
             ),
           ],
         ),
