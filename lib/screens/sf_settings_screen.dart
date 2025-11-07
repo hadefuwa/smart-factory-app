@@ -14,11 +14,21 @@ class SFSettingsScreen extends StatefulWidget {
 class _SFSettingsScreenState extends State<SFSettingsScreen> {
   double _speedScaling = 1.0;
   bool _randomFaults = false;
-  bool _isLiveMode = false;
-  String _plcIpAddress = '192.168.1.100';
+  bool _isLiveMode = true; // Default to live mode
+  String _plcIpAddress = '192.168.7.2';
+  String? _selectedIpPreset; // null = custom, otherwise the preset IP
+  int _rack = 0;
+  int _slot = 1;
   final TextEditingController _ipController = TextEditingController();
+  final TextEditingController _rackController = TextEditingController();
+  final TextEditingController _slotController = TextEditingController();
   final PLCCommunicationService _plcService = PLCCommunicationService();
   bool _isConnecting = false;
+  
+  static const List<String> _ipPresets = [
+    '192.168.7.2',
+    '192.168.0.99',
+  ];
   
   final Map<PartMaterial, double> _materialMix = {
     PartMaterial.steel: 33.0,
@@ -37,13 +47,36 @@ class _SFSettingsScreenState extends State<SFSettingsScreen> {
     setState(() {
       _isLiveMode = _plcService.isLiveMode;
       _plcIpAddress = _plcService.plcIpAddress;
+      _rack = _plcService.rack;
+      _slot = _plcService.slot;
       _ipController.text = _plcIpAddress;
+      _rackController.text = _rack.toString();
+      _slotController.text = _slot.toString();
+      
+      // Determine if current IP matches a preset
+      if (_ipPresets.contains(_plcIpAddress)) {
+        _selectedIpPreset = _plcIpAddress;
+      } else {
+        _selectedIpPreset = null; // Custom IP
+      }
     });
+    
+    // Auto-connect if live mode is enabled
+    if (_isLiveMode && !_plcService.isConnected) {
+      setState(() => _isConnecting = true);
+      final connected = await _plcService.connect();
+      setState(() => _isConnecting = false);
+      if (connected) {
+        _showMessage('Auto-connected to PLC');
+      }
+    }
   }
 
   @override
   void dispose() {
     _ipController.dispose();
+    _rackController.dispose();
+    _slotController.dispose();
     super.dispose();
   }
 
@@ -84,8 +117,55 @@ class _SFSettingsScreenState extends State<SFSettingsScreen> {
     await _plcService.setPlcIpAddress(newIp);
     setState(() {
       _plcIpAddress = newIp;
+      // Update preset selection if it matches
+      if (_ipPresets.contains(newIp)) {
+        _selectedIpPreset = newIp;
+      } else {
+        _selectedIpPreset = null; // Custom IP
+      }
     });
     _showMessage('PLC IP address updated');
+  }
+  
+  Future<void> _handleIpPresetChange(String? preset) async {
+    setState(() {
+      _selectedIpPreset = preset;
+      if (preset != null) {
+        // Preset selected, update IP
+        _plcIpAddress = preset;
+        _ipController.text = preset;
+      }
+      // If null (Custom), keep current IP in text field
+    });
+    
+    if (preset != null) {
+      await _plcService.setPlcIpAddress(preset);
+      _showMessage('PLC IP address updated to $preset');
+    }
+  }
+
+  Future<void> _handleRackSlotChange() async {
+    final rack = int.tryParse(_rackController.text.trim()) ?? 0;
+    final slot = int.tryParse(_slotController.text.trim()) ?? 1;
+    
+    if (rack < 0 || rack > 7) {
+      _showMessage('Rack must be between 0 and 7');
+      _rackController.text = _rack.toString();
+      return;
+    }
+    
+    if (slot < 0 || slot > 31) {
+      _showMessage('Slot must be between 0 and 31');
+      _slotController.text = _slot.toString();
+      return;
+    }
+    
+    await _plcService.setRackSlot(rack, slot);
+    setState(() {
+      _rack = rack;
+      _slot = slot;
+    });
+    _showMessage('Rack/Slot updated');
   }
 
   @override
@@ -102,93 +182,241 @@ class _SFSettingsScreenState extends State<SFSettingsScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _SectionCard(
-              title: 'Mode',
+              title: 'Connection Mode',
+              icon: Icons.settings_ethernet,
               child: Column(
                 children: [
+                  // Connection Status Badge
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: _isLiveMode
+                          ? (_plcService.isConnected 
+                              ? Colors.green.withValues(alpha: 0.2)
+                              : Colors.orange.withValues(alpha: 0.2))
+                          : Colors.blue.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: _isLiveMode
+                            ? (_plcService.isConnected ? Colors.green : Colors.orange)
+                            : Colors.blue,
+                        width: 2,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          _isLiveMode
+                              ? (_plcService.isConnected 
+                                  ? Icons.link 
+                                  : Icons.link_off)
+                              : Icons.computer,
+                          color: _isLiveMode
+                              ? (_plcService.isConnected ? Colors.green : Colors.orange)
+                              : Colors.blue,
+                          size: 24,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _isLiveMode ? 'Live Mode' : 'Simulation Mode',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                  color: _isLiveMode
+                                      ? (_plcService.isConnected ? Colors.green : Colors.orange)
+                                      : Colors.blue,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                _isConnecting
+                                    ? 'Connecting to PLC...'
+                                    : _isLiveMode
+                                        ? (_plcService.isConnected
+                                            ? 'Connected to $_plcIpAddress'
+                                            : 'Not connected')
+                                        : 'Using simulated data',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.white.withValues(alpha: 0.7),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  // Mode Selection
+                  _RadioTile(
+                    title: 'Live',
+                    subtitle: 'Connect to real hardware via PLC',
+                    value: true,
+                    groupValue: _isLiveMode,
+                    icon: Icons.link,
+                    color: Colors.green,
+                    onChanged: _isConnecting ? null : (value) => _handleModeChange(true),
+                  ),
+                  const SizedBox(height: 8),
                   _RadioTile(
                     title: 'Simulation',
                     subtitle: 'Run with simulated data',
                     value: false,
                     groupValue: _isLiveMode,
+                    icon: Icons.computer,
+                    color: Colors.blue,
                     onChanged: _isConnecting ? null : (value) => _handleModeChange(false),
                   ),
-                  _RadioTile(
-                    title: 'Live',
-                    subtitle: _isConnecting 
-                        ? 'Connecting to PLC...'
-                        : _plcService.isConnected
-                            ? 'Connected to PLC at $_plcIpAddress'
-                            : 'Connect to real hardware via PLC',
-                    value: true,
-                    groupValue: _isLiveMode,
-                    onChanged: _isConnecting ? null : (value) => _handleModeChange(true),
-                  ),
                   if (_isLiveMode) ...[
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 20),
                     const Divider(),
                     const SizedBox(height: 16),
-                    TextField(
-                      controller: _ipController,
+                    // IP Preset Dropdown
+                    DropdownButtonFormField<String>(
+                      value: _selectedIpPreset,
                       decoration: InputDecoration(
-                        labelText: 'PLC IP Address',
-                        hintText: '192.168.1.100',
-                        prefixIcon: const Icon(Icons.settings_ethernet),
-                        suffixIcon: IconButton(
-                          icon: const Icon(Icons.check),
-                          onPressed: _handleIpChange,
-                          tooltip: 'Save IP address',
-                        ),
+                        labelText: 'PLC IP Address Preset',
+                        prefixIcon: const Icon(Icons.list),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
+                        filled: true,
+                        fillColor: Colors.white.withValues(alpha: 0.05),
                       ),
-                      keyboardType: TextInputType.number,
-                      onSubmitted: (_) => _handleIpChange(),
+                      items: [
+                        ..._ipPresets.map((ip) => DropdownMenuItem(
+                          value: ip,
+                          child: Text(ip),
+                        )),
+                        const DropdownMenuItem(
+                          value: null,
+                          child: Text('Custom'),
+                        ),
+                      ],
+                      onChanged: _handleIpPresetChange,
+                    ),
+                    // Custom IP Text Field (only shown when Custom is selected)
+                    if (_selectedIpPreset == null) ...[
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: _ipController,
+                        decoration: InputDecoration(
+                          labelText: 'Custom PLC IP Address',
+                          hintText: '192.168.7.2',
+                          prefixIcon: const Icon(Icons.settings_ethernet),
+                          suffixIcon: IconButton(
+                            icon: const Icon(Icons.check),
+                            onPressed: _handleIpChange,
+                            tooltip: 'Save IP address',
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          filled: true,
+                          fillColor: Colors.white.withValues(alpha: 0.05),
+                        ),
+                        keyboardType: TextInputType.number,
+                        onSubmitted: (_) => _handleIpChange(),
+                      ),
+                    ],
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _rackController,
+                            decoration: InputDecoration(
+                              labelText: 'Rack',
+                              hintText: '0',
+                              prefixIcon: const Icon(Icons.grid_view),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              filled: true,
+                              fillColor: Colors.white.withValues(alpha: 0.05),
+                            ),
+                            keyboardType: TextInputType.number,
+                            onSubmitted: (_) => _handleRackSlotChange(),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: TextField(
+                            controller: _slotController,
+                            decoration: InputDecoration(
+                              labelText: 'Slot',
+                              hintText: '1',
+                              prefixIcon: const Icon(Icons.view_module),
+                              suffixIcon: IconButton(
+                                icon: const Icon(Icons.check),
+                                onPressed: _handleRackSlotChange,
+                                tooltip: 'Save rack/slot',
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              filled: true,
+                              fillColor: Colors.white.withValues(alpha: 0.05),
+                            ),
+                            keyboardType: TextInputType.number,
+                            onSubmitted: (_) => _handleRackSlotChange(),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 12),
                     Row(
                       children: [
                         Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const DataStreamLogScreen(),
-                                ),
-                              );
-                            },
-                            icon: const Icon(Icons.list_alt),
-                            label: const Text('View Data Stream Log'),
+                          child: FilledButton.icon(
+                            onPressed: _isConnecting
+                                ? null
+                                : () async {
+                                    if (_plcService.isConnected) {
+                                      _plcService.disconnect();
+                                      _showMessage('Disconnected from PLC');
+                                    } else {
+                                      setState(() => _isConnecting = true);
+                                      final connected = await _plcService.connect();
+                                      setState(() => _isConnecting = false);
+                                      if (connected) {
+                                        _showMessage('Connected to PLC');
+                                      } else {
+                                        _showMessage('Failed to connect. Check IP address.');
+                                      }
+                                    }
+                                    setState(() {});
+                                  },
+                            icon: Icon(
+                              _plcService.isConnected ? Icons.link_off : Icons.link,
+                            ),
+                            label: Text(
+                              _plcService.isConnected ? 'Disconnect' : 'Connect',
+                            ),
+                            style: FilledButton.styleFrom(
+                              backgroundColor: _plcService.isConnected 
+                                  ? Colors.red 
+                                  : Colors.green,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 8),
-                        IconButton(
-                          icon: Icon(
-                            _plcService.isConnected ? Icons.link : Icons.link_off,
-                            color: _plcService.isConnected ? Colors.green : Colors.red,
-                          ),
-                          onPressed: _isConnecting
-                              ? null
-                              : () async {
-                                  if (_plcService.isConnected) {
-                                    _plcService.disconnect();
-                                    _showMessage('Disconnected from PLC');
-                                  } else {
-                                    setState(() => _isConnecting = true);
-                                    final connected = await _plcService.connect();
-                                    setState(() => _isConnecting = false);
-                                    if (connected) {
-                                      _showMessage('Connected to PLC');
-                                    } else {
-                                      _showMessage('Failed to connect. Check IP address.');
-                                    }
-                                  }
-                                  setState(() {});
-                                },
-                          tooltip: _plcService.isConnected
-                              ? 'Disconnect from PLC'
-                              : 'Connect to PLC',
+                        OutlinedButton.icon(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const DataStreamLogScreen(),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.list_alt),
+                          label: const Text('Log'),
                         ),
                       ],
                     ),
@@ -200,6 +428,7 @@ class _SFSettingsScreenState extends State<SFSettingsScreen> {
 
             _SectionCard(
               title: 'Simulator',
+              icon: Icons.speed,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -279,6 +508,7 @@ class _SFSettingsScreenState extends State<SFSettingsScreen> {
 
             _SectionCard(
               title: 'Faults',
+              icon: Icons.warning,
               child: Column(
                 children: [
                   SwitchListTile(
@@ -352,7 +582,7 @@ class _SFSettingsScreenState extends State<SFSettingsScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Version 1.0.5',
+                    'Version 1.0.6',
                     style: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
                   ),
                   const SizedBox(height: 16),
@@ -415,8 +645,13 @@ class _SFSettingsScreenState extends State<SFSettingsScreen> {
 class _SectionCard extends StatelessWidget {
   final String title;
   final Widget child;
+  final IconData? icon;
 
-  const _SectionCard({required this.title, required this.child});
+  const _SectionCard({
+    required this.title,
+    required this.child,
+    this.icon,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -432,12 +667,24 @@ class _SectionCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
+          Row(
+            children: [
+              if (icon != null) ...[
+                Icon(
+                  icon,
+                  color: Theme.of(context).colorScheme.primary,
+                  size: 24,
+                ),
+                const SizedBox(width: 8),
+              ],
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 16),
           child,
@@ -453,6 +700,8 @@ class _RadioTile extends StatelessWidget {
   final bool value;
   final bool groupValue;
   final ValueChanged<bool?>? onChanged;
+  final IconData? icon;
+  final Color? color;
 
   const _RadioTile({
     required this.title,
@@ -460,16 +709,74 @@ class _RadioTile extends StatelessWidget {
     required this.value,
     required this.groupValue,
     required this.onChanged,
+    this.icon,
+    this.color,
   });
 
   @override
   Widget build(BuildContext context) {
-    return RadioListTile<bool>(
-      title: Text(title),
-      subtitle: Text(subtitle),
-      value: value,
-      groupValue: groupValue,
-      onChanged: onChanged,
+    final isSelected = value == groupValue;
+    final tileColor = color ?? Theme.of(context).colorScheme.primary;
+    
+    return InkWell(
+      onTap: onChanged != null ? () => onChanged!(value) : null,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: isSelected 
+              ? tileColor.withValues(alpha: 0.1)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected 
+                ? tileColor.withValues(alpha: 0.5)
+                : Colors.white.withValues(alpha: 0.1),
+            width: isSelected ? 2 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            if (icon != null) ...[
+              Icon(
+                icon,
+                color: isSelected ? tileColor : Colors.white.withValues(alpha: 0.6),
+                size: 24,
+              ),
+              const SizedBox(width: 12),
+            ],
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: isSelected ? tileColor : Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.white.withValues(alpha: 0.7),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Radio<bool>(
+              value: value,
+              groupValue: groupValue,
+              onChanged: onChanged,
+              activeColor: tileColor,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

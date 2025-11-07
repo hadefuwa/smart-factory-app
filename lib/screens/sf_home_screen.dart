@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../models/simulator_state.dart';
 import '../services/simulator_service.dart';
 import '../services/plc_communication_service.dart';
-import '../widgets/app_drawer.dart';
 
 class SFHomeScreen extends StatelessWidget {
   const SFHomeScreen({super.key});
@@ -21,20 +20,7 @@ class SFHomeScreen extends StatelessWidget {
           final isLiveMode = plcService.isLiveMode;
           final isConnected = plcService.isConnected;
 
-          return Scaffold(
-            drawer: const AppDrawer(),
-            appBar: AppBar(
-              title: const Text('Smart Factory'),
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.settings_outlined),
-                  onPressed: () {
-                    Navigator.pushNamed(context, '/settings');
-                  },
-                ),
-              ],
-            ),
-            body: SingleChildScrollView(
+          return SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -96,8 +82,7 @@ class SFHomeScreen extends StatelessWidget {
                   _ControlButtons(state: state, simulator: simulator),
                 ],
               ),
-            ),
-          );
+            );
         },
       );
   }

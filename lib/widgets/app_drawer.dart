@@ -62,6 +62,24 @@ class AppDrawer extends StatelessWidget {
                 children: [
                   _buildDrawerItem(
                     context,
+                    icon: Icons.home,
+                    title: 'Home',
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.pushNamedAndRemoveUntil(
+                        context,
+                        '/home',
+                        (route) => false,
+                      );
+                    },
+                  ),
+                  const Divider(
+                    color: Color(0xFF1A1A2E),
+                    height: 16,
+                    thickness: 1,
+                  ),
+                  _buildDrawerItem(
+                    context,
                     icon: Icons.view_in_ar,
                     title: '3D Models',
                     onTap: () {
