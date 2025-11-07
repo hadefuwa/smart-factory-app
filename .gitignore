@@ -43,7 +43,7 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
-# APK files - use GitHub Releases instead
+# APK files - ignore build directory APKs, but keep releases folder APKs
 *.apk
-releases/*.apk
+!releases/*.apk
 
