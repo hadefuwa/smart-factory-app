@@ -14,7 +14,7 @@ class AboutScreen extends StatelessWidget {
         title: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const LogoWidget(width: 28, height: 28, glowRadius: 6),
+            const LogoWidget(width: 28, height: 28),
             const SizedBox(width: 10),
             ShaderMask(
               shaderCallback: (bounds) => LinearGradient(
@@ -58,10 +58,9 @@ class AboutScreen extends StatelessWidget {
               children: [
                 // App Info Section
                 Center(
-                  child: LogoWidget(
+                  child:                   LogoWidget(
                     width: 120,
                     height: 120,
-                    glowRadius: 15,
                   ),
                 ),
                 const SizedBox(height: 32),

@@ -268,7 +268,7 @@ class _Model3DViewerScreenState extends State<Model3DViewerScreen> {
         title: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const LogoWidget(width: 28, height: 28, glowRadius: 6),
+            const LogoWidget(width: 28, height: 28),
             const SizedBox(width: 10),
             ShaderMask(
               shaderCallback: (bounds) => LinearGradient(

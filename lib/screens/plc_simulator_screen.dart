@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import '../widgets/logo_widget.dart';
 
-class WebshopScreen extends StatefulWidget {
-  const WebshopScreen({super.key});
+class PLCSimulatorScreen extends StatefulWidget {
+  const PLCSimulatorScreen({super.key});
 
   @override
-  State<WebshopScreen> createState() => _WebshopScreenState();
+  State<PLCSimulatorScreen> createState() => _PLCSimulatorScreenState();
 }
 
-class _WebshopScreenState extends State<WebshopScreen> {
+class _PLCSimulatorScreenState extends State<PLCSimulatorScreen> {
   late final WebViewController _controller;
   bool _isLoading = true;
   String? _errorMessage;
@@ -39,20 +39,20 @@ class _WebshopScreenState extends State<WebshopScreen> {
           onWebResourceError: (WebResourceError error) {
             setState(() {
               _isLoading = false;
-              _errorMessage = error.description.isNotEmpty 
-                  ? error.description 
-                  : 'Failed to load page';
+              _errorMessage = error.description.isNotEmpty
+                  ? error.description
+                  : 'Failed to load PLC Simulator';
             });
           },
         ),
       )
-      ..loadRequest(Uri.parse('https://www.matrixtsl.com/webshop/'));
+      ..loadRequest(Uri.parse('https://app.plcsimulator.online/'));
   }
 
   @override
   Widget build(BuildContext context) {
     final purple = Theme.of(context).colorScheme.primary;
-    
+
     return Scaffold(
       appBar: AppBar(
         title: Row(
@@ -69,7 +69,7 @@ class _WebshopScreenState extends State<WebshopScreen> {
                 ],
               ).createShader(bounds),
               child: const Text(
-                'Matrix TSL Webshop',
+                'PLC Simulator',
                 style: TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
@@ -87,13 +87,6 @@ class _WebshopScreenState extends State<WebshopScreen> {
               _controller.reload();
             },
             tooltip: 'Refresh',
-          ),
-          IconButton(
-            icon: Icon(Icons.open_in_browser, color: purple),
-            onPressed: () {
-              // You can add functionality to open in external browser if needed
-            },
-            tooltip: 'Open in browser',
           ),
         ],
       ),
@@ -114,7 +107,7 @@ class _WebshopScreenState extends State<WebshopScreen> {
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        'Error loading webshop',
+                        'Error loading PLC Simulator',
                         style: Theme.of(context).textTheme.headlineSmall,
                       ),
                       const SizedBox(height: 8),
@@ -159,7 +152,7 @@ class _WebshopScreenState extends State<WebshopScreen> {
                       ),
                       const SizedBox(height: 20),
                       Text(
-                        'Loading Matrix TSL Webshop...',
+                        'Loading PLC Simulator...',
                         style: TextStyle(
                           color: Colors.white.withValues(alpha: 0.7),
                           fontSize: 16,

@@ -128,7 +128,7 @@ class _ContactScreenState extends State<ContactScreen> {
         title: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const LogoWidget(width: 28, height: 28, glowRadius: 6),
+            const LogoWidget(width: 28, height: 28),
             const SizedBox(width: 10),
             ShaderMask(
               shaderCallback: (bounds) => LinearGradient(
@@ -172,10 +172,9 @@ class _ContactScreenState extends State<ContactScreen> {
               children: [
                 // Header Icon
                 Center(
-                  child: LogoWidget(
+                  child:                   LogoWidget(
                     width: 100,
                     height: 100,
-                    glowRadius: 12,
                   ),
                 ),
                 const SizedBox(height: 32),

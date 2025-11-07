@@ -8,9 +8,10 @@ import 'about_screen.dart';
 import 'settings_screen.dart';
 import 'webshop_screen.dart';
 import 'video_screen.dart';
-import 'factory_game_screen.dart';
 import 'model_3d_viewer_screen.dart';
 import 'contact_screen.dart';
+import 'industrial_maintenance_game_screen.dart';
+import 'plc_simulator_screen.dart';
 
 class ProductsListScreen extends StatefulWidget {
   const ProductsListScreen({super.key});
@@ -109,7 +110,7 @@ class _ProductsListScreenState extends State<ProductsListScreen>
         title: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const LogoWidget(width: 32, height: 32, glowRadius: 8),
+            const LogoWidget(width: 32, height: 32),
             const SizedBox(width: 12),
             ShaderMask(
               shaderCallback: (bounds) => LinearGradient(
@@ -215,10 +216,9 @@ class _ProductsListScreenState extends State<ProductsListScreen>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Center(
-                    child: LogoWidget(
+                    child:                     LogoWidget(
                       width: 64,
                       height: 64,
-                      glowRadius: 12,
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -287,14 +287,28 @@ class _ProductsListScreenState extends State<ProductsListScreen>
                   ),
                   _buildDrawerItem(
                     context,
-                    icon: Icons.games_outlined,
-                    title: 'Factory Game',
+                    icon: Icons.build_outlined,
+                    title: 'Maintenance Game',
                     onTap: () {
                       Navigator.pop(context);
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const FactoryGameScreen(),
+                          builder: (context) => const IndustrialMaintenanceGameScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  _buildDrawerItem(
+                    context,
+                    icon: Icons.memory_outlined,
+                    title: 'PLC Simulator',
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const PLCSimulatorScreen(),
                         ),
                       );
                     },

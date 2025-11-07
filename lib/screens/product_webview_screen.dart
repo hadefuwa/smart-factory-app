@@ -64,7 +64,7 @@ class _ProductWebViewScreenState extends State<ProductWebViewScreen> {
         title: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const LogoWidget(width: 28, height: 28, glowRadius: 6),
+            const LogoWidget(width: 28, height: 28),
             const SizedBox(width: 10),
             Expanded(
               child: ShaderMask(
