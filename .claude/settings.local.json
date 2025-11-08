@@ -35,7 +35,8 @@
       "Bash(dir:*)",
       "Bash(nul)",
       "Bash(gh release create:*)",
-      "Bash(gh auth status:*)"
+      "Bash(gh auth status:*)",
+      "Bash(git reset:*)"
     ],
     "deny": [],
     "ask": []
